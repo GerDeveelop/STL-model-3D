@@ -1,0 +1,21 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": { "major": 3, "minor": 24, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "windows-x64-release",
+      "displayName": "Windows x64 Release (MSVC + Qt Widgets)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/windows-x64-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_PREFIX_PATH": "$env{STL_QT_ROOT}",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/staging"
+      },
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "windows-x64-release", "configurePreset": "windows-x64-release" }
+  ]
+}

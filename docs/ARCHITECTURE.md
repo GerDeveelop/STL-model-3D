@@ -1,6 +1,6 @@
 # Arquitectura y decisiones
 
-Fecha: 2026-11-05. Estado: diseño previsto; no hay módulos implementados.
+Fecha: 2026-11-06. Estado: base C++20/Qt Widgets compilada Release x64; arranque oculto y cierre normal comprobados, sin revisión visual. Decisiones: Qt Widgets 6.8.3 exacto (sustitución autorizada de 6.8.9), enlace dinámico, MSVC x64, CMake y Ninja. El inventario y las limitaciones están en WINDOWS_SETUP.md. Importador STL y estadísticas implementados y compilados; visor pendiente. Núcleo stlcut_core independiente de Qt, sin dependencias geométricas ni vcpkg adicionales. Contratos y evidencia en STL_IMPORT.md. La tabla siguiente conserva temas futuros; interfaz y enlace quedan resueltos para esta base.
 
 ## Separación de responsabilidades
 
@@ -12,21 +12,21 @@ Fecha: 2026-11-05. Estado: diseño previsto; no hay módulos implementados.
 - `tests`: fixtures propios, pruebas unitarias y de integración.
 - `scripts` y CI: configuración, compilación, pruebas y paquete reproducible.
 
-Flujo previsto: seleccionar archivo → validar límites → importar → validar datos → calcular estadísticas → presentar malla y resultados. Un fallo debe producir un error comprensible y mantener la aplicación utilizable. La política para conservar el modelo anterior ante fallo debe definirse antes de implementar.
+Flujo previsto: seleccionar archivo → validar límites → importar → validar datos → calcular estadísticas → presentar malla y resultados. Un fallo debe producir un error comprensible y mantener la aplicación utilizable. Se conserva el modelo anterior ante fallo o cancelación; solo se sustituye tras finalizar correctamente.
 
-Las tareas extensas deben ejecutarse con un mecanismo que mantenga operativa la UI; hilos, cancelación y propiedad de datos todavía requieren diseño. La geometría no dependerá de servicios IA.
+La lectura STL usa QThread y stop_token. El trabajo comparte un resultado que la UI consume tras esperar al hilo; al cerrar se solicita cancelación y se espera antes de destruirlo. La UI mantiene la malla anterior mientras importa. Véase STL_IMPORT.md para límites de cancelación y validación pendiente. La geometría no dependerá de servicios IA.
 
 ## Decisiones pendientes de aprobación
 
 | Tema | Alternativas o cuestión | Estado |
 |---|---|---|
-| Interfaz | Qt Widgets o QML | Por decidir |
+| Interfaz | Qt Widgets | Seleccionada para esta base |
 | Renderizado | VTK integrado con Qt o alternativa justificada | Por decidir |
-| Dependencias | Distribución de Qt, vcpkg, baseline y versiones exactas | Por verificar y fijar |
-| Toolchain | MSVC, SDK, CMake y Ninja compatibles | Entorno sin inspeccionar |
-| Enlace | Dinámico o estático y efecto en distribución | Por decidir |
+| Dependencias | Qt Base 6.8.3 MSVC x64 oficial | Instalado y checksum verificado; vcpkg/transitivas futuras pendientes |
+| Toolchain | MSVC, SDK, CMake y Ninja | Release local correcto; segundo equipo y CI pendientes |
+| Enlace | Dinámico | Exigido por CMake; distribución pendiente |
 | Licencia del producto | Uso personal, código abierto o comercial | Por confirmar |
-| Importación | Parser propio o biblioteca, representación y límites | Por decidir |
+| Importación | Parser C++20 propio; Mesh double; 256 MiB y 2M triángulos | Aprobado e implementado; contrato en STL_IMPORT.md |
 | Geometría | CGAL u otra solución para fases posteriores | Fuera de fase 0.1 |
 | CI | Repositorio remoto, runner Windows y permisos | Sin configurar |
 | Paquete inicial | Estructura Release, DLL, plugins y runtimes | Por diseñar y probar |

@@ -1,7 +1,7 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
 **Versión del documento:** 1.1  
-**Estado:** Especificación inicial; no se afirma que exista código implementado.  
+**Estado:** Al 2026-11-06, base C++20/Qt Widgets compilada Release x64 con Qt 6.8.3; arranque oculto y cierre normal comprobados. Importador ASCII/binario y estadísticas implementados y validados con entradas en memoria; visor y revisión visual pendientes. Contratos, políticas y límites vigentes en STL_IMPORT.md. Véanse CHANGELOG.md y WINDOWS_SETUP.md. Las referencias posteriores a ausencia de código describen el estado documental previo. Por instrucción posterior del usuario no se crean carpetas ni archivos de pruebas.
 **Plataforma:** Windows 10/11 x64  
 **IDE:** Visual Studio Code + Codex  
 **Objetivo:** aplicación local instalable para importar, reparar, cortar y exportar mallas 3D; posteriormente generar modelos a partir de imágenes y texto.

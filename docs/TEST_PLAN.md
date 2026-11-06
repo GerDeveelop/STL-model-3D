@@ -2,6 +2,8 @@
 
 Fecha: 2026-11-05. Estado: plan; ninguna de estas pruebas ha sido ejecutada.
 
+Actualización 2026-11-06: compilación Release x64 con Qt 6.8.3 y configuración MSVC fuera del aislamiento correctas. Arranque oculto, ventana identificada, cierre WM_CLOSE y salida 0 comprobados en línea. Sin revisión visual. Evidencias en WINDOWS_SETUP.md y CHANGELOG.md. Solo cubren parcialmente B01/T11; CI y segundo equipo pendientes. Por instrucción del usuario no se crean carpetas ni archivos de pruebas. Actualización del importador: 18 casos iniciales y 10 posteriores en memoria satisfactorios, además de GUI oculta con ruta inexistente; detalles y alcance en STL_IMPORT.md. Los casos siguientes tienen cobertura parcial del lector, pero no se declaran cerrados porque falta apertura GUI de archivo válido, cancelación real, revisión visual y validación externa.
+
 ## Casos previstos
 
 | ID | Caso | Resultado esperado |
@@ -23,7 +25,7 @@ Fecha: 2026-11-05. Estado: plan; ninguna de estas pruebas ha sido ejecutada.
 
 Registrar por ejecución: commit cuando exista, fecha, equipo, Windows, CPU/GPU/RAM, herramientas y dependencias, comando, código de salida, resultado y log. Para el visor, añadir capturas y registro de interacción; una compilación no demuestra funcionamiento visual.
 
-Los fixtures deben ser propios o tener licencia compatible documentada. Fijar dimensiones y tolerancias antes de automatizar las comparaciones. No hay fixtures, ejecutables ni infraestructura de pruebas actualmente.
+Los fixtures deben ser propios o tener licencia compatible documentada. Fijar dimensiones y tolerancias antes de automatizar las comparaciones. Hay ejecutable Release e informes de comandos bajo build/, sin fixtures ni archivos de pruebas propios. Los datos de comprobación se generan en memoria y se introducen por --inspect-stdin.
 
 La VM limpia es parte de la validación final de distribución. Se recomienda usarla también para el paquete inicial, pero su ejecución no se declara realizada. Corte, volumen, exportación y reimportación se prueban desde fase 0.2. Instalación, desinstalación y actualización completas corresponden a fase 1.0.
 
