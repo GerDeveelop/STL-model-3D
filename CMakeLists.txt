@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(STLCutStudioAI VERSION 0.1.0 LANGUAGES CXX)
+project(STLCutStudioAI VERSION 0.2.1 LANGUAGES CXX)
 
 if(NOT WIN32 OR NOT MSVC)
     message(FATAL_ERROR "Esta base requiere Windows y MSVC x64.")
@@ -21,7 +21,31 @@ if(NOT qt_core_type STREQUAL "SHARED_LIBRARY")
 endif()
 
 qt_standard_project_setup()
-add_library(stlcut_core STATIC core/io/StlReader.cpp)
+set(MANIFOLD_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/build/deps/manifold-3.5.4/manifold-3.5.4")
+if(NOT EXISTS "${MANIFOLD_ROOT}/CMakeLists.txt")
+    message(FATAL_ERROR "Ejecute scripts/bootstrap-manifold.ps1 para instalar Manifold 3.5.4 verificado.")
+endif()
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Manifold static Windows library" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "No test infrastructure" FORCE)
+foreach(option MANIFOLD_TEST MANIFOLD_PAR MANIFOLD_CROSS_SECTION MANIFOLD_CBIND
+               MANIFOLD_PYBIND MANIFOLD_JSBIND MANIFOLD_DOWNLOADS)
+    set(${option} OFF CACHE BOOL "Minimal pinned Manifold build" FORCE)
+endforeach()
+add_subdirectory("${MANIFOLD_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/manifold" EXCLUDE_FROM_ALL)
+set_target_properties(manifold PROPERTIES AUTOMOC OFF AUTOUIC OFF)
+set(LIB3MF_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/build/deps/lib3mf-2.5.0/lib3mf_sdk")
+if(NOT EXISTS "${LIB3MF_ROOT}/Lib/lib3mf.lib")
+    message(FATAL_ERROR "Ejecute scripts/bootstrap-lib3mf.ps1 para instalar lib3mf 2.5.0 verificado.")
+endif()
+add_library(lib3mf SHARED IMPORTED)
+set_target_properties(lib3mf PROPERTIES
+    IMPORTED_IMPLIB "${LIB3MF_ROOT}/Lib/lib3mf.lib"
+    IMPORTED_LOCATION "${LIB3MF_ROOT}/Bin/lib3mf.dll"
+    INTERFACE_INCLUDE_DIRECTORIES "${LIB3MF_ROOT}/Bindings/Cpp")
+add_library(stlcut_core STATIC core/io/StlReader.cpp core/io/MeshReader.cpp
+    core/io/StlWriter.cpp core/cutting/PlaneCut.cpp)
+target_link_libraries(stlcut_core PUBLIC lib3mf PRIVATE manifold)
+target_compile_definitions(stlcut_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 set_target_properties(stlcut_core PROPERTIES AUTOMOC OFF AUTOUIC OFF)
 target_include_directories(stlcut_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_options(stlcut_core PRIVATE /W4 /permissive- /utf-8)
@@ -31,3 +55,8 @@ target_compile_options(STLCutStudioAI PRIVATE /W4 /permissive- /utf-8)
 target_compile_definitions(STLCutStudioAI PRIVATE
     STL_CUT_STUDIO_VERSION="${PROJECT_VERSION}")
 install(TARGETS STLCutStudioAI RUNTIME DESTINATION .)
+add_custom_command(TARGET STLCutStudioAI POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${LIB3MF_ROOT}/Bin/lib3mf.dll" "$<TARGET_FILE_DIR:STLCutStudioAI>/lib3mf.dll")
+install(FILES "${LIB3MF_ROOT}/Bin/lib3mf.dll" DESTINATION .)
+install(FILES "${LIB3MF_ROOT}/License.txt" DESTINATION licenses/lib3mf-2.5.0)
+install(FILES "${MANIFOLD_ROOT}/LICENSE" "${MANIFOLD_ROOT}/AUTHORS" DESTINATION licenses/manifold-3.5.4)

@@ -19,5 +19,7 @@ struct Mesh {
     Bounds bounds;
     std::size_t degenerateTriangles{};
     std::string format;
+    std::string units{"unspecified"};
+    std::vector<std::string> warnings;
 };
 }

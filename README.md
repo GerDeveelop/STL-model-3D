@@ -1,14 +1,18 @@
 # STL Cut Studio AI
 
-Aplicación de escritorio prevista para Windows 10/11 x64 orientada a importar, visualizar y, en fases posteriores, cortar y editar mallas 3D.
+Aplicación de escritorio Windows 10/11 x64 para importar STL/3MF, visualizar mallas, cortar por plano y exportar piezas STL.
 
-**Estado al 2026-11-07:** aplicación C++20/Qt compilada Release x64 con importación STL ASCII/binaria, estadísticas y visor 3D OpenGL. Renderizado, órbita, zoom, paneo, encuadre, ejes y cuadrícula comprobados mediante capturas y eventos dirigidos. Paquete portátil comprobado localmente y CI Windows verificada con artefacto descargable. Windows limpio, segundo equipo del usuario y validación ampliada pendientes.
+**Estado al 2026-11-08:** versión de desarrollo 0.2.1 con importación STL/3MF, visor, corte por Manifold 3.5.4 y exportación STL. Verificados tubos/cavidades, coincidencias con caras/aristas, contornos superiores a 4096 vértices y cancelación. 63 casos inline y 15 del paquete satisfactorios localmente. Sigue requiriendo geometría válida y límites de recursos; contratos y evidencia en [MANIFOLD_CUT.md](docs/MANIFOLD_CUT.md). Sin nueva CI remota ni commit/push. La fase 0.2 continúa; el instalador final corresponde a 1.0.
+
+La entrega final acordada es un instalador `.exe` para Windows x64 con las dependencias necesarias, para abrir la aplicación sin instalar Qt, Python ni herramientas de desarrollo manualmente. El ZIP portátil es provisional. Se elimina el segundo PC físico como requisito y se valida la instalación final en una VM Windows limpia.
 
 ## Documentación
 
 - [Instrucciones de trabajo](AGENTS.md).
 - [Documento maestro](docs/MASTER.md).
-- [Requisitos de fase 0.1](docs/REQUIREMENTS.md).
+- [Motor Manifold: capacidades, límites y evidencia](docs/MANIFOLD_CUT.md).
+- [Fase 0.2: uso, límites y validación](docs/PHASE_02.md).
+- [Requisitos](docs/REQUIREMENTS.md).
 - [Arquitectura y decisiones pendientes](docs/ARCHITECTURE.md).
 - [Plan de pruebas](docs/TEST_PLAN.md).
 - [Registro de cambios](docs/CHANGELOG.md).
@@ -18,6 +22,6 @@ Aplicación de escritorio prevista para Windows 10/11 x64 orientada a importar, 
 - [Compilación y paquete portátil](docs/BUILD_AND_RELEASE.md).
 - [CI Windows x64 y artefactos](docs/CI.md).
 
-La fase 0.1 cubre ventana Qt, STL ASCII/binario, visor y pipeline. El usuario aprobó el primer incremento; los siguientes cambios requieren aprobación previa. No se crean carpetas ni archivos de pruebas por instrucción del usuario. Consulte [configuración Windows](docs/WINDOWS_SETUP.md) y [dependencias](THIRD_PARTY_NOTICES.md) para pasos previstos y limitaciones.
+La fase 0.1 cubre ventana Qt, STL ASCII/binario, visor y pipeline. El usuario aprobó continuar la fase 0.2 y añadir importación 3MF; el incremento actual está descrito en PHASE_02.md. Ampliaciones fuera de este alcance requieren aprobación previa. No se crean carpetas ni archivos de pruebas por instrucción del usuario. Consulte [configuración Windows](docs/WINDOWS_SETUP.md) y [dependencias](THIRD_PARTY_NOTICES.md) para comandos y limitaciones.
 
 No se requieren API keys para el alcance local descrito de la fase 0.1. No hay servicios externos ni motores IA configurados.

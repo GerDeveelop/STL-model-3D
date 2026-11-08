@@ -1,5 +1,9 @@
 # Importación STL — incremento 0.1
 
+> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+
+> Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
+
 Fecha del importador: 2026-11-06. Alcance: ASCII/binario, estadísticas, importación en segundo plano y cancelación. Actualización 2026-11-07: conectado al visor OpenGL; véase VIEWER.md para preparación, controles y validación. Sin reparación.
 
 ## Uso
@@ -41,4 +45,8 @@ Build Release x64 satisfactorio, sin warnings C++ detectados en `build/import-bu
 - 10 casos posteriores al ajuste final de signos y cancelación: signo doble, signo positivo/exponente, desbordamiento de dimensiones, 10k/100k/1M/2M triángulos, rechazo de 2000001 triángulos, más de 256 MiB y ruta Unicode inexistente. Todos satisfactorios. Resultados: `build/import-boundaries.json`. Tiempos completos de proceso/entrada en memoria observados: 0.023/0.037/0.172/0.332 s para 10k/100k/1M/2M; no son benchmarks de disco ni garantías de rendimiento y no se midió RAM máxima.
 - GUI oculta con ruta inexistente: accesibilidad de Windows encontró el mensaje de error y conservación del modelo anterior; ventana operativa y cierre con salida 0. Evidencia: `build/import-ui-elements.json`, stderr vacío en `build/import-ui-stderr.log`.
 
-Pendiente: abrir un STL real con ruta Unicode, verificar visualmente estadísticas, cancelar una importación extensa y conservar un modelo previamente cargado ante error/cancelación. La comprobación GUI de error partía de una escena vacía; no demuestra conservación de un modelo real. No se ejecutaron fixtures de archivo por la instrucción de no crear archivos de pruebas. El visor se implementó y verificó mediante capturas en el incremento del 2026-11-07, con entrada por memoria; detalles en VIEWER.md. CI, segundo equipo, VM limpia y cierre completo de fase siguen pendientes.
+Pendiente: abrir un STL real con ruta Unicode, verificar visualmente estadísticas, cancelar una importación extensa y conservar un modelo previamente cargado ante error/cancelación. La comprobación GUI de error partía de una escena vacía; no demuestra conservación de un modelo real. No se ejecutaron fixtures de archivo por la instrucción de no crear archivos de pruebas. El visor se implementó y verificó mediante capturas en el incremento del 2026-11-07, con entrada por memoria; detalles en VIEWER.md. La CI está verificada. El cierre de fase 0.1 conserva sus pendientes funcionales, sin exigir segundo PC. El instalador .exe y su validación en VM Windows limpia corresponden a la entrega final de fase 1.0.
+
+## Entrada unificada STL/3MF en 0.2
+
+La interfaz ahora ofrece Abrir STL / 3MF; ruta y stdin usan MeshReader para detectar los bytes. El contrato STL permanece sin conversión de escala. JSON añade unidades, advertencias y volumen firmado (sin certificar cierre). Apertura Unicode y fuente intacta fueron verificadas en la sesión anterior; conservación ante archivo inválido fue confirmada por el usuario. Nuevos contratos 3MF y evidencia actual en PHASE_02.md.

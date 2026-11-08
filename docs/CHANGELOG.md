@@ -1,5 +1,31 @@
 # Registro de cambios
 
+## 2026-11-08 — Corte Manifold 0.2.1 autorizado
+
+- Sustituido el motor propio por Manifold 3.5.4 estático, fuente/commit/SHA-256 fijados, licencia Apache-2.0 y autores incluidos en el paquete. Sin CGAL, TBB, Clipper2, Python ni bindings de aplicación adicionales.
+- Admitidos tubos, cavidades múltiples/encerradas, contornos anidados y coincidencias con aristas/caras. Retirado tope separado de 4096 vértices; se conservan límites de 2M triángulos/vértices y presupuesto de buffers contabilizados. Adaptación double centrada/escalada, consolidación de resultados coplanares y comprobación de cierre/volumen.
+- Cancelación cooperativa preserva estado anterior; operaciones internas inmediatas pueden demorar su atención. No se promete latencia máxima ni reparación universal.
+
+Validación: build Release x64, 63/63 casos inline, quince casos del paquete con PATH mínimo, ambos lados visibles de un tubo (24 → 12 + 12) y retención ante plano tangente. Cancelación por Ctrl+. sobre 1 929 612 triángulos comprobada. Medición CLI puntual: 13.3604 s, pico RSS 1350.70 MiB. Nueva evidencia y límites en MANIFOLD_CUT.md. Se observó una advertencia C4244 en header externo, sin modificar upstream. No se crearon fuentes/fixtures de pruebas ni se alteró prueba.stl. Sin commit/push, nueva CI remota o instalador final.
+
+## 2026-11-08 — Primer incremento autorizado de fase 0.2
+
+- Versión de desarrollo 0.2.0. Añadida importación STL/3MF por ruta y stdin con lib3mf 2.5.0 oficial, descarga/hash fijados, límites ZIP y expansión de componentes/unidades/transformaciones. Advierte pérdida de colores/materiales/configuración; rechaza extensiones obligatorias y geometría no admitida.
+- Plano por normal y posición con previsualización amarilla; corte en ambos lados, cierre de contornos simples y comprobación de orientación/volumen. Conserva original y resultado anterior ante error/cancelación. No admite huecos anidados ni caras/aristas coplanares en este primer motor.
+- Exportación STL binaria de selección, reimportación y validación de precisión/cierre/volumen antes de guardado atómico; protege origen.
+- CMake/paquete incorporan DLL y licencia completa del SDK; workflow ampliado a diez casos inline y documentación actualizada. Sin instalación de CGAL/Python/IA ni archivos de pruebas propios.
+
+Validación: Release x64 local correcto, 48/48 casos inline satisfactorios; un archivo 3MF real de 20 124 triángulos leído sin modificarlo; revisión visible del plano, ambos lados de un cubo 3MF (1000 → 500 + 500 mm³) y conservación de pieza tras corte inválido. Exportación asistida a prueba.stl, reimportación CLI correcta, 20 triángulos y volumen 500. Cortes completos sobre 756 012 y 1 929 612 triángulos; cancelación por botón y Ctrl+. conservando original. Corregido el atajo perdido al cambiar el texto del botón, mediante QShortcut de ventana. ZIP provisional final con 72 archivos más manifiesto y diez comprobaciones satisfactorias localmente con PATH mínimo; no es nueva ejecución CI remota. Evidencia y límites en PHASE_02.md. La aceptación de fase 0.1 por el usuario permite avanzar, sin inventar ejecución de pendientes históricos. Sin commit/push ni instalador final.
+
+## 2026-11-07 — Retiro del segundo PC y entrega final .exe
+
+- Por instrucción del usuario, eliminado el segundo PC físico de requisitos, planificación y criterios de cierre. Desarrollo en un equipo Windows y validación de compilación en CI.
+- Fijada entrega final de fase 1.0: instalador `STLCutStudioAI-Setup-<version>-win-x64.exe` que despliegue aplicación y dependencias necesarias, con apertura sin preparación manual de Qt, Python ni herramientas de desarrollo.
+- La VM Windows limpia será obligatoria para validar instalación, ejecución de funciones entregadas y desinstalación final. Su uso en fase 0.1 es opcional; el ZIP portátil actual sigue siendo provisional.
+- Alineados maestro 1.2, instrucciones AGENTS, README, requisitos, arquitectura, plan de validación y documentación de CI/paquete/importador/visor/rendimiento. Las menciones anteriores a segundo PC en este registro son históricas y no requisitos vigentes.
+
+Validación: revisión de referencias y coherencia documental; sin cambios de código, scripts, workflow, ZIP ni manifiestos existentes y sin nuevas ejecuciones de compilación o pruebas. No se implementó el instalador ni se declara cerrada la fase 0.1. Los mensajes históricos dentro de paquetes anteriores se alinearán cuando se autorice modificar el empaquetador. Esta actualización queda local, sin commit/push.
+
 ## 2026-11-07 — CI remota verificada y artefacto disponible
 
 - Subidos los incrementos acumulados de visor, métricas, empaquetado, licencias y workflow a main.

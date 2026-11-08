@@ -1,5 +1,9 @@
 # Compilación y paquete portátil Windows
 
+> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+
+> Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
+
 Fecha: 2026-11-07. Paquete local de validación, no release público ni instalador. Importador y visor pertenecen a fase 0.1; el instalador/actualizador sigue en fase 1.0.
 
 ## Requisitos y comando comprobado
@@ -81,10 +85,24 @@ Los primeros intentos del comprobador tuvieron errores de alias de codificación
 
 ## Límites y siguiente paso
 
-El equipo de validación conserva herramientas de desarrollo instaladas: PATH mínimo y trazado de módulos dan evidencia local de independencia del kit, pero no sustituyen Windows limpio o segundo PC. Siguen pendientes el diálogo de archivo real, validación interactiva del paquete, otros controladores, derechos/licencia de distribución, VM/segundo equipo y CI. No se publicaron ni se subieron binarios a GitHub.
+El equipo de validación conserva herramientas de desarrollo instaladas: PATH mínimo y trazado de módulos dan evidencia local de independencia del kit, pero no sustituyen la validación del instalador final en VM Windows limpia. No se exige segundo PC físico. El ZIP provisional y CI ya están comprobados con el alcance documentado; siguen pendientes las comprobaciones funcionales ampliadas, otros controladores y derechos/licencia de distribución.
+
+## Entrega final del programa completo — fase 1.0
+
+Entregar `STLCutStudioAI-Setup-<version>-win-x64.exe`, que instale la aplicación y las dependencias necesarias. Tras instalar, abrir `STLCutStudioAI.exe` sin preparar Qt, Python, compiladores ni gestores de desarrollo manualmente. Validar instalación, apertura, funciones entregadas y desinstalación en VM Windows limpia. El ZIP portátil de fase 0.1 es provisional y no satisface por sí solo esta entrega final.
+
+El instalador no existe todavía. Esta actualización es solo documental: no cambia scripts, manifiestos, README internos ni ZIP ya generados. Estos pueden conservar el alcance histórico con referencias al segundo PC; las plantillas del empaquetador se alinearán al modificar código con autorización posterior. El requisito vigente es el acordado aquí y en MASTER.md, sin segundo PC físico.
 
 Fuentes técnicas: [despliegue Qt 6.8](https://doc.qt.io/qt-6.8/windows-deployment.html), [despliegue Microsoft app-local](https://learn.microsoft.com/en-us/cpp/windows/choosing-a-deployment-method?view=msvc-170) y ayuda local de windeployqt 6.8.3.
 
 ## Automatización CI
 
 El workflow Windows utiliza este empaquetador con MSVC serie 14.44 y registra el entorno real por ejecución. Qt mantiene versión y checksum. Véase [CI.md](CI.md) para comandos, artefactos y validación remota.
+
+## Paquete provisional 0.2
+
+Ejecutar bootstrap-lib3mf.ps1 antes del build/empaquetado. CMake instala tambi?n lib3mf.dll y su License.txt completo en licenses/lib3mf-2.5.0; el manifiesto del paquete incluye lib3mf_version=2.5.0 e inventario SHA-256. Los mensajes del empaquetador ya reflejan STL/3MF/corte/exportación y no exigen segundo PC. QSaveFile se usa para exportaciones de malla; no reemplaza el empaquetado. El instalador final y VM limpia siguen en fase 1.0. No confundir la ejecución CI histórica 0.1 con el paquete actual.
+
+## Paquete provisional 0.2.1 con Manifold
+
+Ejecutar bootstrap-manifold.ps1 antes del build. El motor está enlazado estáticamente; CMake instala solo LICENSE/AUTHORS originales en licenses/manifold-3.5.4 y excluye la instalación de headers/bibliotecas de desarrollo del subproyecto. Manifiesto con manifold_version=3.5.4 y manifold_linkage=static. Paquete actual verificado localmente: 74 archivos más manifiesto, 15 casos de importación/corte/reimportación con PATH mínimo y revisión visible/cancelación. Hash y limitaciones en MANIFOLD_CUT.md. Es un ZIP provisional; no se implementó instalador ni se publicó release.

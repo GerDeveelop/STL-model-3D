@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/mesh/Mesh.h"
+#include "core/cutting/PlaneCut.h"
 
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions>
@@ -19,6 +20,8 @@ struct ViewMesh {
     std::vector<ViewVertex> vertices;
     float radius{1};
     float floor{-1};
+    stlcut::Vec3 center;
+    double scale{1};
 };
 
 // Presentation adapter only: does not modify core mesh coordinates or statistics.
@@ -35,6 +38,7 @@ public:
     void resetCamera();
     void showGrid(bool show);
     void showAxes(bool show);
+    void setCutPlane(stlcut::Plane plane, bool visible);
 signals:
     void rendererStatus(const QString& message);
 protected:
@@ -67,4 +71,6 @@ private:
     QVector3D target_;
     QPointF lastMouse_;
     QString failure_;
+    stlcut::Plane cutPlane_;
+    bool cutPlaneVisible_{};
 };

@@ -153,6 +153,7 @@ Mesh binary(std::istream& input, std::uint32_t count, std::stop_token stop)
 {
     Mesh mesh;
     mesh.format = "binario";
+    checkStop(stop);
     mesh.triangles.reserve(count);
     input.seekg(84);
     for (std::uint32_t index = 0; index < count; ++index) {

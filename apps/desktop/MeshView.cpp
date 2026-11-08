@@ -29,6 +29,7 @@ ViewVertex vertex(const QVector3D& p, const QVector3D& n = {})
 
 std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::stop_token stop)
 {
+    if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
     auto result = std::make_shared<ViewMesh>();
     const auto d = mesh.bounds.dimensions();
     const double extent = std::max({d.x, d.y, d.z});
@@ -38,6 +39,9 @@ std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::s
                               std::midpoint(mesh.bounds.min.z, mesh.bounds.max.z)};
     result->radius = std::max(0.01f, static_cast<float>(std::hypot(d.x/scale, d.y/scale, d.z/scale)));
     result->floor = static_cast<float>((mesh.bounds.min.z - center.z) / scale * 2);
+    result->center = center;
+    result->scale = scale;
+    if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
     result->vertices.reserve(mesh.triangles.size() * 3);
     for (const auto& triangle : mesh.triangles) {
         if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
@@ -177,6 +181,8 @@ void MeshView::resetCamera()
 { azimuth_=45; elevation_=30; fitMesh(); }
 void MeshView::showGrid(bool show) { grid_=show; update(); }
 void MeshView::showAxes(bool show) { axes_=show; update(); }
+void MeshView::setCutPlane(stlcut::Plane plane, bool visible)
+{ cutPlane_=plane; cutPlaneVisible_=visible; update(); }
 void MeshView::resizeGL(int, int) { if (autoFit_) { updateFitDistance(); } }
 
 QVector3D MeshView::eyeDirection() const
@@ -260,6 +266,24 @@ void MeshView::paintGL()
         lines.push_back(vertex({0,0,floor})); lines.push_back(vertex({0,1.5f,floor}));
         lines.push_back(vertex({0,0,floor})); lines.push_back(vertex({0,0,floor+1.5f}));
     }
+    const auto baseCount=static_cast<GLsizei>(lines.size());
+    if(cutPlaneVisible_ && mesh_) {
+        const auto p=cutPlane_;
+        const double length=std::hypot(p.normal.x,p.normal.y,p.normal.z);
+        if(std::isfinite(length)&&length>1e-15) {
+            const QVector3D n(static_cast<float>(p.normal.x/length),static_cast<float>(p.normal.y/length),static_cast<float>(p.normal.z/length));
+            const auto c=mesh_->center;
+            const double offset=(p.offset/length-(p.normal.x*c.x+p.normal.y*c.y+p.normal.z*c.z)/length)/mesh_->scale*2;
+            if(std::isfinite(offset)&&std::abs(offset)<1e6) {
+                const auto u=QVector3D::crossProduct(n,std::abs(n.x())<.8f?QVector3D(1,0,0):QVector3D(0,1,0)).normalized()*mesh_->radius*1.2f;
+                const auto v=QVector3D::crossProduct(n,u);
+                const auto center=n*static_cast<float>(offset);
+                const QVector3D corners[]={center-u-v,center+u-v,center+u+v,center-u+v};
+                for(int i=0;i<4;++i) {lines.push_back(vertex(corners[i]));lines.push_back(vertex(corners[(i+1)%4]));}
+                lines.push_back(vertex(center));lines.push_back(vertex(center+n*mesh_->radius*.4f));
+            }
+        }
+    }
     if (!lines.empty()) {
         linesBuffer_.bind();
         linesBuffer_.allocate(lines.data(), static_cast<int>(lines.size()*sizeof(ViewVertex)));
@@ -275,6 +299,10 @@ void MeshView::paintGL()
                 glDrawArrays(GL_LINES,gridCount+i*2,2);
             }
             glDepthFunc(GL_LESS);
+        }
+        if(static_cast<GLsizei>(lines.size())>baseCount) {
+            program_.setUniformValue("color",QVector3D(1,.7f,.15f));
+            glDrawArrays(GL_LINES,baseCount,static_cast<GLsizei>(lines.size())-baseCount);
         }
         linesBuffer_.release();
     }
@@ -297,7 +325,7 @@ void MeshView::paintGL()
         }
         painter.setPen(QColor(210,220,235));
     }
-    if (!mesh_) { painter.drawText(rect(),Qt::AlignCenter,QStringLiteral("Abra un STL para visualizar la malla")); }
+    if (!mesh_) { painter.drawText(rect(),Qt::AlignCenter,QStringLiteral("Abra un STL o 3MF para visualizar la malla")); }
     painter.drawText(14,height()-14,QStringLiteral("Orbitar: izquierdo   ·   Paneo: derecho/central   ·   Zoom: rueda   ·   Encuadrar: F"));
 }
 

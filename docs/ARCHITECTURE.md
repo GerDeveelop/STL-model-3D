@@ -1,5 +1,9 @@
 # Arquitectura y decisiones
 
+> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+
+> Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
+
 Fecha: 2026-11-07. Estado: importador y visor OpenGL compilados Release x64; renderizado y controles verificados mediante capturas y eventos dirigidos. Interacción manual visible pendiente. Decisiones: Qt Widgets 6.8.3 exacto (sustitución autorizada de 6.8.9), enlace dinámico, MSVC x64, CMake y Ninja. El inventario y las limitaciones están en WINDOWS_SETUP.md. Importador, estadísticas y visor implementados. Adaptador de presentación en MeshView.h/.cpp; preparación de vértices en QThread, carga GPU en contexto UI. Contratos y validación del visor en VIEWER.md. Núcleo stlcut_core independiente de Qt, sin dependencias geométricas ni vcpkg adicionales. Contratos y evidencia en STL_IMPORT.md. La tabla siguiente conserva temas futuros; interfaz y enlace quedan resueltos para esta base.
 
 ## Separación de responsabilidades
@@ -23,13 +27,13 @@ La lectura STL y preparación de la copia de presentación usan QThread y stop_t
 | Interfaz | Qt Widgets | Seleccionada para esta base |
 | Renderizado | QOpenGLWidget + Qt OpenGL/OpenGLWidgets 6.8.3 | Alternativa aprobada para visor 0.1; módulos del kit instalado |
 | Dependencias | Qt Base 6.8.3 MSVC x64 oficial | Instalado y checksum verificado; vcpkg/transitivas futuras pendientes |
-| Toolchain | MSVC, SDK, CMake y Ninja | Release local correcto; segundo equipo y CI pendientes |
+| Toolchain | MSVC, SDK, CMake y Ninja | Release local y CI verificados; versiones y diferencias documentadas, sin segundo PC obligatorio |
 | Enlace | Dinámico | Exigido por CMake; distribución pendiente |
 | Licencia del producto | Uso personal, código abierto o comercial | Por confirmar |
 | Importación | Parser C++20 propio; Mesh double; 256 MiB y 2M triángulos | Aprobado e implementado; contrato en STL_IMPORT.md |
-| Geometría | CGAL u otra solución para fases posteriores | Fuera de fase 0.1 |
+| Geometría | Manifold 3.5.4 estático, sin bindings ni TBB/Clipper2 | Aprobado, compilado y validado en incremento 0.2.1 |
 | CI | GitHub Actions windows-2022, MSVC 14.44 y Qt verificado | Ejecución 4 satisfactoria: build, ZIP, cinco casos y artefacto; véase CI.md |
-| Paquete inicial | ZIP Release x64 con Qt/plugins y CRT local | Generado y verificado localmente; Windows limpio/segundo PC pendientes |
+| Paquete inicial | ZIP Release x64 con Qt/plugins y CRT local | Provisional, verificado localmente y en CI; instalador .exe/VM limpia corresponden a fase 1.0 |
 
 Ninguna alternativa de esta tabla es una dependencia aprobada. Antes de incorporarla, registrar versión, origen, licencia, necesidad, forma de instalación y distribución. La compatibilidad se comprobará con compilación y pruebas, sin inventar hashes o resultados.
 
@@ -41,3 +45,15 @@ Ninguna alternativa de esta tabla es una dependencia aprobada. Antes de incorpor
 - Manifiestos, presets y configuración de CI alineados con esas versiones.
 
 No se crean configuraciones de Python o IA hasta que su fase requiera dependencias concretas. El instalador completo y el actualizador permanecen en fase 1.0.
+
+## Entrega final acordada
+
+Se trabaja con un equipo de desarrollo y CI; el segundo PC físico deja de ser requisito. Al completar el programa se entregará un instalador `.exe` Windows x64 que despliegue la aplicación y dependencias necesarias, para abrirla sin instalación manual de Qt, Python ni herramientas de desarrollo. La validación de instalación, ejecución y desinstalación se realizará en VM Windows limpia antes del cierre de fase 1.0. El ZIP actual es provisional. El instalador no está implementado y este cambio documental no autoriza comenzar su desarrollo.
+
+## Arquitectura del incremento 0.2
+
+`core/io/MeshReader` detecta STL/ZIP 3MF y adapta lib3mf 2.5.0 a Mesh; `core/cutting/PlaneCut` calcula y verifica ambos lados; `core/io/StlWriter` serializa STL binario. Mesh incorpora unidades y advertencias. El núcleo sigue sin Qt. La UI conserva original y dos resultados, prepara sus copias de renderizado en el trabajador y guarda con QSaveFile tras reimportar bytes. El adaptador del visor guarda centro/escala para transformar correctamente el plano sin alterar la geometría. Contratos y límites en PHASE_02.md.
+
+## Adaptador de corte 0.2.1
+
+PlaneCut conserva su API. Indexa/verifica la malla, normaliza coordenadas, usa MeshGL64 y SplitByPlane, consolida resultados coplanares y valida volumen/cierre antes de entregarlos a la UI. El núcleo continúa independiente de Qt. ExecutionContext recibe cancelación de stop_token; las operaciones internas inmediatas se comprueban al regresar. No hay subproceso auxiliar ni cuota rígida de RAM. Detalles de buffers, versión y licencia en MANIFOLD_CUT.md.

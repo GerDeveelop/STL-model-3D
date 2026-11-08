@@ -47,6 +47,12 @@ jobs:
             throw
           }
 
+      - name: Download and verify lib3mf 2.5.0
+        run: ./scripts/bootstrap-lib3mf.ps1
+
+      - name: Download and verify Manifold 3.5.4
+        run: ./scripts/bootstrap-manifold.ps1
+
       - name: Build and package Release x64
         run: |
           $ErrorActionPreference = 'Stop'
@@ -89,7 +95,7 @@ jobs:
       - name: Verify ZIP and import data in memory
         run: |
           @'
-          import hashlib, json, os, pathlib, struct, subprocess, zipfile
+          import hashlib, io, json, math, os, pathlib, struct, subprocess, zipfile
           root = pathlib.Path.cwd()
           archives = sorted((root / 'build/packages').glob('*/*.zip'))
           assert len(archives) == 1, 'Expected one ZIP'
@@ -123,8 +129,20 @@ jobs:
                        ''.join('vertex %s %s %s\n' % vertices[i] for i in face) +
                        'endloop\nendfacet\n' for face in faces) + 'endsolid cube\n').encode()
           cases = [('binary-solid-header', binary, True), ('ascii', ascii_stl, True),
+                   ('binary-pk-header', b'PK arbitrary STL'.ljust(80,b' ') + binary[80:], True),
                    ('empty', b'', False), ('truncated', binary[:-1], False),
                    ('non-finite', ascii_stl.replace(b'vertex 0 0 0', b'vertex nan 0 0', 1), False)]
+          def make_3mf(required=''):
+              output = io.BytesIO()
+              vertex_xml = ''.join('<vertex x="%s" y="%s" z="%s"/>' % v for v in vertices)
+              triangle_xml = ''.join('<triangle v1="%s" v2="%s" v3="%s"/>' % f for f in faces)
+              with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
+                  z.writestr('[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>')
+                  z.writestr('_rels/.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>')
+                  z.writestr('3D/3dmodel.model','<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" '+required+'><resources><object id="1" type="model"><mesh><vertices>'+vertex_xml+'</vertices><triangles>'+triangle_xml+'</triangles></mesh></object></resources><build><item objectid="1"/></build></model>')
+              return output.getvalue()
+          cases += [('3mf-cube',make_3mf(),True),
+                    ('3mf-required-extension',make_3mf('xmlns:custom="urn:unsupported" requiredextensions="custom"'),False)]
           outcomes = []
           for name, data, valid in cases:
               result = subprocess.run([str(exe),'--inspect-stdin'], input=data, capture_output=True,
@@ -135,6 +153,73 @@ jobs:
                   assert output['triangles'] == 12 and output['dimensions'] == [10,20,30]
                   assert output['min'] == [0,0,0] and output['max'] == [10,20,30]
               outcomes.append({'case': name, 'passed': True, 'exit_code': result.returncode})
+          for source_name,data in [('stl',binary),('3mf',make_3mf())]:
+              volumes = []
+              for side in ('positive','negative'):
+                  cut = subprocess.run([str(exe),'--cut-stdin','0','0','1','15',side],input=data,capture_output=True,env=env,timeout=20)
+                  assert cut.returncode == 0, cut.stderr
+                  reimport = subprocess.run([str(exe),'--inspect-stdin'],input=cut.stdout,capture_output=True,env=env,timeout=20)
+                  result = json.loads(reimport.stdout)
+                  assert reimport.returncode == 0 and result['ok']
+                  assert math.isclose(result['signed_volume'],3000,rel_tol=1e-6),result
+                  volumes.append(result['signed_volume'])
+              assert math.isclose(sum(volumes),6000,rel_tol=1e-6)
+              outcomes.append({'case':source_name+'-cut-export-reimport','passed':True,'volumes':volumes})
+          def binary_mesh(points,triangles):
+              return b'Manifold acceptance'.ljust(80,b' ') + struct.pack('<I',len(triangles)) + b''.join(
+                  struct.pack('<12fH',0,0,0,*(n for i in t for n in points[i]),0) for t in triangles)
+          def hollow_tube(n=4):
+              ring = [(-1,-1),(1,-1),(1,1),(-1,1)] if n == 4 else [
+                  (math.cos(2*math.pi*i/n),math.sin(2*math.pi*i/n)) for i in range(n)]
+              points = [(s*x,s*y,z) for z in (0,2) for s in (2,1) for x,y in ring]
+              triangles = []
+              def quad(a,b,c,d): triangles.extend([(a,b,c),(a,c,d)])
+              for i in range(n):
+                  j = (i+1)%n
+                  quad(i,j,2*n+j,2*n+i)
+                  quad(n+j,n+i,3*n+i,3*n+j)
+                  quad(2*n+i,2*n+j,3*n+j,3*n+i)
+                  quad(j,i,n+i,n+j)
+              return binary_mesh(points,triangles)
+          cavity_points = vertices + [(2.5+x*.5,5+y*.5,7.5+z*.5) for x,y,z in vertices]
+          cavity_faces = faces + [(a+8,c+8,b+8) for a,b,c in faces]
+          polygon = [(0,0),(2,0),(2,1),(1,1),(1,2),(0,2)]
+          l_points = [(x,y,z) for z in (0,1) for x,y in polygon]
+          roof = [(0,1,3),(1,2,3),(0,3,5),(3,4,5)]
+          l_faces = [(a,c,b) for a,b,c in roof] + [(a+6,b+6,c+6) for a,b,c in roof]
+          for i in range(6):
+              j=(i+1)%6
+              l_faces += [(i,j,j+6),(i,j+6,i+6)]
+          for name,data,normal,offset,expected,hole in [
+              ('hollow-tube',hollow_tube(),(0,0,1),1,(12,12),True),
+              ('enclosed-cavity',binary_mesh(cavity_points,cavity_faces),(0,0,1),15,(2625,2625),False),
+              ('coplanar-edges',binary,(1,-.5,0),0,(3000,3000),False),
+              ('coplanar-concave-face',binary_mesh(l_points,l_faces),(1,0,0),1,(1,2),False),
+              ('contour-over-4096',hollow_tube(1100),(0,0,1),1,None,True)]:
+              volumes=[]
+              for index,side in enumerate(('positive','negative')):
+                  cut=subprocess.run([str(exe),'--cut-stdin',*(str(n) for n in normal),str(offset),side],input=data,capture_output=True,env=env,timeout=30)
+                  assert cut.returncode == 0,(name,cut.stderr)
+                  reimport=subprocess.run([str(exe),'--inspect-stdin'],input=cut.stdout,capture_output=True,env=env,timeout=20)
+                  result=json.loads(reimport.stdout)
+                  assert reimport.returncode == 0 and result['ok'],(name,result)
+                  if expected: assert math.isclose(result['signed_volume'],expected[index],rel_tol=1e-5),(name,result)
+                  volumes.append(result['signed_volume'])
+                  count=struct.unpack_from('<I',cut.stdout,80)[0]
+                  edges={}
+                  for i in range(count):
+                      row=struct.unpack_from('<12fH',cut.stdout,84+50*i)
+                      tri=[tuple(row[3+3*j:6+3*j]) for j in range(3)]
+                      for a,b in zip(tri,tri[1:]+tri[:1]):
+                          edge=edges.setdefault(tuple(sorted((a,b))),[0,0])
+                          edge[0]+=1;edge[1]+=1 if a<b else -1
+                      if hole and all(abs(v[2]-offset)<1e-6 for v in tri):
+                          turns=[(tri[(j+1)%3][0]-tri[j][0])*(-tri[j][1])-(tri[(j+1)%3][1]-tri[j][1])*(-tri[j][0]) for j in range(3)]
+                          assert not (min(turns)>=-1e-10 or max(turns)<=1e-10),(name,'filled hole')
+                  assert all(e == [2,0] for e in edges.values()),(name,'STL not closed/oriented')
+              original=subprocess.run([str(exe),'--inspect-stdin'],input=data,capture_output=True,env=env,timeout=20)
+              assert math.isclose(sum(volumes),json.loads(original.stdout)['signed_volume'],rel_tol=1e-5),name
+              outcomes.append({'case':name,'passed':True,'volumes':volumes})
           report = {'archive': archive.name, 'sha256': digest, 'manifest_files': len(manifest['files']),
                     'cases': outcomes, 'path': env['PATH'], 'gui_tested': False, 'clean_windows_tested': False}
           (root / 'build/ci-verification.json').write_text(json.dumps(report,indent=2),encoding='utf8')

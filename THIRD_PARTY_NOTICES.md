@@ -1,5 +1,9 @@
 # Dependencias del primer incremento
 
+## Manifold 3.5.4 — incremento 0.2.1
+
+Motor de corte 3D aprobado, [fuente oficial v3.5.4](https://github.com/elalish/manifold/tree/v3.5.4), commit ce50d78021d64507f89e8c9fc2c2e51018117857, licencia Apache-2.0. Compilado estáticamente; LICENSE y AUTHORS originales se instalan en licenses/manifold-3.5.4. Su linalg.h deriva del trabajo de dominio público de Sterling Orsten y contiene las atribuciones y términos de la adaptación de The Manifold Authors. TBB, Clipper2, bindings y pruebas upstream desactivados; no se distribuyen esos componentes opcionales. Fuente/checksum fijados en scripts/bootstrap-manifold.ps1 y docs/MANIFOLD_CUT.md. No requiere Python, CGAL ni una DLL Manifold adicional. Esta dependencia no resuelve por sí sola las decisiones de licencia del producto y cumplimiento de los demás componentes.
+
 Fecha: 2026-11-07. Inventario de declaraciones y herramientas detectadas; no acredita distribución.
 
 | Componente | Versión | Finalidad | Licencia / estado |
@@ -29,3 +33,7 @@ Fuentes Qt: [tag v6.8.3](https://code.qt.io/cgit/qt/qtbase.git/tag/?h=v6.8.3). S
 Acciones oficiales bajo licencia MIT, fijadas por commit: [checkout v7.0.1](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/LICENSE) (`3d3c42e5aac5ba805825da76410c181273ba90b1`) y [upload-artifact v7.0.2](https://github.com/actions/upload-artifact/blob/cf430e030ddbb5b0abf93d22962f4752f3646cd9/LICENSE) (`cf430e030ddbb5b0abf93d22962f4752f3646cd9`). Se usan para checkout y conservación de evidencias; no son dependencias del ejecutable. El runner aporta Windows Server 2022, MSVC serie 14.44 y herramientas inventariadas por ejecución. Véase docs/CI.md.
 
 7-Zip, preinstalado en la imagen del runner, se usa únicamente para extraer Qt; no se incluye en el ZIP de la aplicación. La imagen consultada anuncia 26.05 y el bootstrap registra la versión real usada. Su [licencia oficial](https://www.7-zip.org/license.txt) incluye LGPL-2.1-or-later y términos BSD/unRAR para componentes concretos. No se descarga ni instala una versión adicional.
+
+## lib3mf 2.5.0 — incremento 0.2
+
+Dependencia de ejecución para leer 3MF, SDK oficial del [3MF Consortium](https://github.com/3MFConsortium/lib3mf/releases/tag/v2.5.0). Licencia BSD-2-Clause. Se utiliza lib3mf.dll x64 y sus bindings/import library; no se incorporan CGAL ni libigl. Descarga y SHA-256 fijados en scripts/bootstrap-lib3mf.ps1 y docs/PHASE_02.md. El paquete instala sin modificar el License.txt completo del SDK, con avisos de lib3mf, libzip 1.10.1, zlib (el texto del SDK rotula 1.3.0), cpp-base64 2.rc.08 y fast_float 6.0.0. No se infiere una versión binaria de zlib distinta a partir del README actual upstream. Se conservan íntegros los avisos transitivos suministrados por el SDK. La selección de licencia del producto y revisión final de distribución continúan pendientes.

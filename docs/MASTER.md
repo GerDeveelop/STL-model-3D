@@ -1,7 +1,7 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
-**Versión del documento:** 1.1  
-**Estado:** Al 2026-11-07, importador ASCII/binario y visor OpenGL compilados Release x64 con Qt 6.8.3. Malla y controles verificados por capturas/eventos dirigidos, estadísticas originales preservadas. Paquete portátil con DLL/plugins/CRT comprobado localmente y CI Windows verificada: build, empaquetado y cinco casos inline satisfactorios. Segundo equipo del usuario, Windows limpio y validación ampliada pendientes. Evidencia remota en CI.md. Visor documentado en VIEWER.md. Contratos, políticas y límites vigentes en STL_IMPORT.md. Véanse CHANGELOG.md y WINDOWS_SETUP.md. Las referencias posteriores a ausencia de código describen el estado documental previo. Por instrucción posterior del usuario no se crean carpetas ni archivos de pruebas.
+**Versión del documento:** 1.3
+**Estado:** versión de desarrollo 0.2.1 con importación STL/3MF, visor, corte por Manifold 3.5.4 y exportación STL. Verificados tubos/cavidades, coincidencias con caras/aristas, contornos superiores a 4096 vértices y cancelación. 63 casos inline y 15 del paquete satisfactorios localmente. Sigue requiriendo geometría válida y límites de recursos; contratos y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Sin nueva CI remota ni commit/push. La fase 0.2 continúa; el instalador final corresponde a 1.0.
 **Plataforma:** Windows 10/11 x64  
 **IDE:** Visual Studio Code + Codex  
 **Objetivo:** aplicación local instalable para importar, reparar, cortar y exportar mallas 3D; posteriormente generar modelos a partir de imágenes y texto.
@@ -16,7 +16,7 @@ Actúa como arquitecto de software y desarrollador senior de C++20, Qt 6, geomet
 
 STL Cut Studio AI permite:
 
-1. Importar STL, y en etapas posteriores OBJ y 3MF.
+1. Importar STL y 3MF (incorporado en fase 0.2); OBJ en una etapa posterior.
 2. Visualizar, medir, rotar y transformar modelos 3D.
 3. Cortar por planos horizontal, vertical, oblicuo o arbitrario; obtener componentes separados y cerrar superficies cuando la geometría lo permita.
 4. Generar conectores y cavidades con tolerancias configurables.
@@ -34,7 +34,7 @@ STL Cut Studio AI permite:
 |---|---|---|
 | Escritorio | C++20, Qt 6 Widgets o QML (elegir una estrategia documentada), CMake | Ventanas, menús, interacción y proyectos |
 | Visor | QOpenGLWidget + Qt OpenGL/OpenGLWidgets 6.8.3, alternativa aprobada para fase 0.1 | Renderizado de mallas; plano de corte futuro |
-| Geometría | CGAL y, si se justifica, libigl | Intersecciones, cortes, reparación y operaciones booleanas |
+| Geometría | Manifold 3.5.4, aprobado para corte 0.2.1; CGAL/libigl solo alternativas futuras | Corte de sólidos; ampliaciones de reparación sujetas a otro incremento |
 | IA | Python 3.11, servicio local FastAPI opcional | Adaptadores de modelos imagen→3D y texto→3D |
 | Paramétrico | OpenSCAD y/o Blender como herramientas externas opcionales | Modelado por instrucciones |
 | Configuración | JSON, SQLite si se necesita índice de proyectos | Preferencias, proyectos y metadatos |
@@ -111,7 +111,7 @@ El código real deberá documentar interfaces y contratos de cada módulo. Evita
 ## 5. Requisitos funcionales y criterios de aceptación
 
 ### RF-01: importación
-- Abrir STL ASCII y binario.
+- Abrir STL ASCII y binario; desde fase 0.2 también 3MF, con geometría convertida a mm y límites de PHASE_02.md.
 - Rechazar archivos truncados y registrar errores comprensibles.
 - Mostrar dimensiones, cantidad de triángulos y caja envolvente.
 - **Prueba:** cubo de referencia importado sin pérdida de triángulos.
@@ -158,9 +158,11 @@ El código real deberá documentar interfaces y contratos de cada módulo. Evita
 - Reimportar el resultado como prueba de integridad.
 
 ### RF-10: distribución
-- Instalador Windows x64; aplicación ejecutable en equipo limpio compatible sin herramientas de desarrollo.
+- Entrega final obligatoria: instalador `STLCutStudioAI-Setup-<version>-win-x64.exe` con las dependencias necesarias para Windows x64.
+- Tras instalar, abrir `STLCutStudioAI.exe` sin instalar Qt, Python, compiladores ni gestores de desarrollo manualmente.
 - Desinstalador, accesos directos, versión visible y registro de errores.
 - IA avanzada como complemento opcional separado.
+- Validar instalación y ejecución final en una VM Windows limpia. No se requiere un segundo PC físico.
 
 ## 6. Dependencias: no basta con requirements.txt
 
@@ -172,23 +174,17 @@ Hay **tres capas de dependencias**:
 
 Los pesos de modelos de IA son paquetes de datos separados: versionados, con checksum SHA-256, tamaño, licencia y origen; descargables de forma explícita. Nunca asumir que `pip install` descarga y configura automáticamente un motor completo.
 
-## 7. Dos computadores Windows: estrategia de sincronización
+## 7. Un equipo de desarrollo, CI y entrega ejecutable
 
-- Repositorio Git remoto privado o público según la licencia elegida; ramas `main` y `develop`, ramas de funciones y PR.
-- En ambos equipos instalar Git, VS Code, Codex, Visual Studio Build Tools con MSVC/C++ SDK, CMake, Ninja, Qt 6 y vcpkg según el manifiesto.
-- Clonar el mismo repositorio, ejecutar `scripts/bootstrap-windows.ps1` y configurar `CMakePresets.json`.
-- Compilar en cada equipo usando el mismo preset `windows-x64-release`.
+- Se utiliza un solo equipo Windows de desarrollo y GitHub Actions para compilación remota. El segundo PC físico deja de ser requisito y no bloquea ninguna fase.
+- En desarrollo usar el repositorio, scripts y preset `windows-x64-release`; documentar diferencias reales entre toolchain local y CI.
 - Nunca subir `build/`, `.venv/`, cachés, pesos de IA ni credenciales a Git.
-- Para ejecutar **sin instalar herramientas de desarrollo**, usar el instalador construido en CI o un paquete Release verificado; copiar solo el `.exe` aislado normalmente NO basta.
+- Fase 0.1: ZIP portátil provisional con sus DLL/plugins/runtime, comprobado localmente con PATH mínimo y mediante las comprobaciones aplicables en CI. No exige instalador ni VM limpia como condición de cierre de esta fase.
+- Fase 1.0: entregar un instalador `.exe` que despliegue la aplicación y sus dependencias; validar instalación, apertura y desinstalación en una VM Windows limpia, sin Qt, Python ni Visual Studio preinstalados.
 - Conservar proyectos y preferencias en `%LOCALAPPDATA%/STLCutStudioAI/` o `%APPDATA%/STLCutStudioAI/`, separados de `Program Files`.
-- Mantener rutas relativas y evitar referencias a carpetas `C:\Users\...` específicas.
-- Validar siempre en una máquina limpia o VM de Windows, sin Qt, Python ni Visual Studio instalados.
+- Mantener rutas relativas y evitar referencias a carpetas específicas del desarrollador.
 
-### Flujo diario recomendado
-
-Equipo A: `git pull` → trabajar → pruebas → `git add`/`commit` → `git push`.  
-Equipo B: `git pull` → ejecutar bootstrap solo si cambian dependencias → compilar o instalar Release → continuar.  
-No copiar manualmente carpetas `build` entre computadores como mecanismo de sincronización.
+Flujo diario: actualizar el repositorio → trabajar → compilar y comprobar → documentar → commit/push cuando estén autorizados. Los artefactos se producen mediante scripts y CI, no copiando carpetas de desarrollo.
 
 ## 8. Compilación y empaquetado Windows
 
@@ -239,18 +235,18 @@ No copiar manualmente carpetas `build` entre computadores como mecanismo de sinc
 - **IA:** mocks en CI; pruebas de inferencia en hardware compatible y matriz de GPU/VRAM.
 - **Actualización:** instalación limpia, actualización desde N-1, reversión o recuperación.
 
-No publicar versión 1.0 sin pasar pruebas de instalación en **ambos computadores** y al menos una VM limpia.
+No publicar versión 1.0 sin validar el instalador `.exe` y la aplicación instalada en una VM Windows limpia. No se exige validación en dos computadores físicos.
 
 ## 12. Roadmap y entregables
 
 | Fase | Resultado | Condición de salida |
 |---|---|---|
-| 0.1 | Ventana Qt, STL, visor, CI | Compila en dos equipos y en CI |
-| 0.2 | Corte por plano, exportación | Pruebas de volumen y reimportación |
+| 0.1 | Ventana Qt, STL, visor, CI y ZIP provisional | Compilación local y CI satisfactorias, funciones verificadas y paquete con runtime comprobado; sin segundo PC ni VM obligatoria en esta fase |
+| 0.2 | Importación 3MF, corte por plano, exportación STL | Unidades/transformaciones correctas, límites explícitos, volumen y reimportación comprobados |
 | 0.3 | Conectores, validación y reparación | Fixtures y tolerancias verificadas |
 | 0.4 | Imagen→3D con adaptador IA | Generación + validación de malla |
 | 0.5 | Texto→3D y asistente | Operaciones verificables y seguras |
-| 1.0 | Instalador, actualizador, documentación | Pruebas completas en Windows limpio |
+| 1.0 | Instalador `.exe`, actualizador y documentación | Instalación, ejecución y desinstalación verificadas en VM Windows limpia, sin preparación manual de dependencias |
 
 Estimación inicial orientativa: varios meses de desarrollo iterativo; no asumir fechas cerradas antes de un prototipo del motor geométrico y pruebas de hardware.
 
@@ -264,7 +260,7 @@ Estimación inicial orientativa: varios meses de desarrollo iterativo; no asumir
 6. Añadir fixture STL simple, tests y ejecución mediante CTest.
 7. Crear scripts PowerShell idempotentes de bootstrap, build y test.
 8. Configurar GitHub Actions Windows con versiones fijadas y artefacto de prueba.
-9. Preparar empaquetado inicial; verificar que se abre en otro Windows sin IDE.
+9. Preparar ZIP portátil inicial y comprobar que carga sus dependencias con PATH mínimo; conservar evidencia local y de CI.
 10. Documentar comandos reales ejecutados, errores, resultados y pendientes.
 
 ### Definición de terminado por tarea
@@ -274,7 +270,7 @@ Estimación inicial orientativa: varios meses de desarrollo iterativo; no asumir
 - Ninguna dependencia nueva sin licencia y versión documentadas.
 - README y CHANGELOG actualizados cuando aplique.
 - Capturas o logs de pruebas para funciones visuales.
-- No afirmar compatibilidad con un segundo PC hasta haberla probado.
+- Registrar el entorno realmente comprobado. La VM Windows limpia es obligatoria para la entrega final 1.0 y no se exige un segundo PC físico.
 
 ## 14. Prompt de inicio para Codex
 
@@ -282,7 +278,7 @@ Estimación inicial orientativa: varios meses de desarrollo iterativo; no asumir
 Lee docs/MASTER.md y AGENTS.md. Implementa únicamente el sprint 0.1 de STL Cut Studio AI en Windows x64. Antes de programar, inspecciona el repositorio y propón un plan breve con dependencias y riesgos. Usa C++20, Qt 6, CMake, MSVC y una estrategia reproducible para bibliotecas. Crea una app de escritorio compilable que importe STL ASCII/binario y los muestre en un visor 3D. Añade pruebas, scripts PowerShell, CI y documentación. No inventes resultados de compilación ni dependencias. Si una herramienta no está instalada, indica el comando concreto para instalarla y continúa con lo que sea verificable. No implementes IA ni conectores todavía. Al terminar, entrega archivos modificados, comandos para compilar, pruebas ejecutadas y pendientes.
 ```
 
-## 15. Comandos orientativos para trabajar en dos equipos
+## 15. Comandos orientativos del equipo de desarrollo
 
 ```powershell
 # Ejecutar desde una terminal PowerShell en el repositorio:
@@ -314,8 +310,14 @@ La reorganización documental no representa implementación. Los documentos comp
 - [Plan de pruebas](TEST_PLAN.md).
 - [Registro de cambios](CHANGELOG.md).
 
-El alcance inicial es ventana, importación STL, visor y pipeline verificable. La fase 0.1 prepara un paquete Release con sus dependencias para comprobar apertura e importación en otro Windows sin IDE. El instalador completo, desinstalación y actualización pertenecen a la fase 1.0. En fase 0.1 no se exige probar corte ni exportación, que comienzan en fase 0.2.
+El alcance inicial es ventana, importación STL, visor y pipeline verificable. La fase 0.1 prepara un ZIP Release provisional con sus dependencias, comprobado localmente con PATH mínimo y mediante verificaciones aplicables en CI. El instalador `.exe` completo, desinstalación y actualización pertenecen a la fase 1.0, cuya validación final será en VM Windows limpia. En fase 0.1 no se exige probar corte ni exportación, que comienzan en fase 0.2.
 
 La estructura del apartado 4 es objetivo de evolución, no inventario de archivos existentes. Los comandos del apartado 15 siguen siendo orientativos y no ejecutables hasta implementar y verificar sus scripts. Python, FastAPI, CGAL, libigl, modelos IA y sus locks no deben añadirse solo por aparecer en la arquitectura futura; se incorporarán en la fase que los necesite, previa revisión y aprobación.
 
-Antes de implementar se deben acordar las decisiones pendientes de arquitectura y requisitos. No hay versiones de dependencias, licencias de distribución, límites de importación ni resultados de rendimiento verificados. No se ha comprobado el entorno de herramientas, CI, segundo equipo ni VM limpia.
+Este apartado conserva el origen documental de la planificación. El estado actual de herramientas, dependencias, límites, rendimiento, CI y paquete está en los documentos complementarios; la licencia de distribución y la validación final de la VM siguen pendientes.
+
+## 18. Decisión vigente de entrega final (2026-11-07)
+
+Por instrucción del usuario, se elimina el segundo PC físico como requisito. La entrega del programa completo será un instalador `.exe` para Windows x64, con dependencias necesarias y apertura de la aplicación sin preparación manual de Qt, Python ni herramientas de desarrollo. Se verificará instalación, ejecución de las funciones entregadas y desinstalación en VM Windows limpia antes de cerrar fase 1.0. El ZIP portátil actual sigue siendo provisional.
+
+Esta actualización modifica documentación y criterios de aceptación; no implementa el instalador, no repite validaciones y no altera los ZIP/manifiestos ya generados. Las referencias históricas del CHANGELOG a un segundo PC describen el alcance anterior y no son requisitos vigentes.

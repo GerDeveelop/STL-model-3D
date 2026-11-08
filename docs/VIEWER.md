@@ -1,5 +1,9 @@
 # Visor 3D — fase 0.1
 
+> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+
+> Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
+
 Fecha: 2026-11-07. Incremento autorizado: visualizar la malla STL con órbita, zoom, paneo, encuadre, ejes y cuadrícula. Compilado y verificado localmente; la fase completa sigue abierta.
 
 ## Uso
@@ -52,4 +56,12 @@ Entorno: Windows x64, Build Tools 18.8.2, MSVC 19.51.36252.0, SDK 10.0.26100.0, 
 
 Actualización de carga: se midieron 10k/100k/1M/2M, completando recepción/análisis, preparación y envío GPU. Se observó la malla de 10k en ventana visible y cancelación durante recepción de una entrada de 2M, con cierre normal 0. Tiempos, memoria, evidencia, intentos descartados y límites en [PERFORMANCE.md](PERFORMANCE.md). En la sesión posterior con escritorio liberado se verificaron directamente órbita, zoom, F y Home. El usuario realizó el paneo derecho; su desplazamiento no se corroboró visualmente de forma independiente. Detalle en PERFORMANCE.md.
 
-Pendientes: corroboración visual independiente del paneo asistido, apertura real Unicode desde diálogo, retención de malla previa, cancelación durante parser/preparación extensa, VRAM física, hardware sin OpenGL compatible, segundo equipo, CI y paquete autónomo. Informes/capturas en build/, excluido de Git; sin archivos de pruebas propios ni nuevo push.
+Pendientes: corroboración visual independiente del paneo asistido, apertura real Unicode desde diálogo, retención de malla previa, cancelación durante parser/preparación extensa, VRAM física, hardware sin OpenGL compatible y entrega final .exe/VM Windows limpia en fase 1.0. No se exige segundo PC físico; CI y ZIP provisional verificados, con evidencia en CI.md y BUILD_AND_RELEASE.md. Informes/capturas en build/, excluido de Git; sin archivos de pruebas propios.
+
+## Plano y piezas en 0.2
+
+El visor acepta el adaptador de cualquier malla STL/3MF. Mostrar plano y normal + dibuja un contorno amarillo y un segmento hacia el lado positivo. Seleccionar Original/Parte positiva/Parte negativa cambia la malla visible y su encuadre; la ubicación del plano se adapta al centro/escala de la pieza. Revisión visible en NVIDIA RTX 3060 Ti correcta para cubo 3MF de 10 mm: ambas piezas de 10×10×5 mm, 20 triángulos cada una. Guía completa en PHASE_02.md.
+
+## Revisión visible del motor 0.2.1
+
+En el paquete actual se observaron ambas piezas de un tubo cuadrado, con hueco pasante conservado y nueva superficie de corte anular visible en el lado negativo. Cada parte: 4×4×1, 32 triángulos y volumen 12, original 24. Un plano tangente conservó la pieza anterior con aviso correcto. Cancelación por Ctrl+. sobre 1 929 612 triángulos comprobada. No se implementaron nuevos controles de cámara ni historial de cortes. Evidencia en MANIFOLD_CUT.md.

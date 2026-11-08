@@ -1,5 +1,9 @@
 # CI Windows x64
 
+> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+
+> Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
+
 Fecha: 2026-11-07. Workflow subido y ejecución final 4 satisfactoria en el commit 20c6c3b; correcciones y evidencia abajo. El usuario autorizó subir los cambios acumulados y ejecutar Actions. No se publica un release ni se instalan servicios/secretos adicionales.
 
 ## Flujo
@@ -28,7 +32,7 @@ Los commits y licencias se verificaron contra los repositorios oficiales al prep
 
 `.gitattributes` fija finales de línea de código/documentación y desactiva transformación de los textos LICENSES originales, necesarios para conservar sus hashes de procedencia. Los scripts PowerShell pueden tener CRLF tras checkout; los textos upstream de licencias deben conservar sus bytes originales.
 
-El manifiesto distingue paquetes generados en Actions de validación local. El runner contiene herramientas de desarrollo: verificar con PATH mínimo tampoco equivale a Windows limpio, segundo equipo del usuario o distribución pública aprobada. Licencia del producto y condiciones de publicación siguen pendientes.
+El manifiesto distingue paquetes generados en Actions de validación local. El runner contiene herramientas de desarrollo: verificar con PATH mínimo no equivale a validar el instalador final en VM Windows limpia ni a aprobar la distribución pública. No se exige segundo PC físico. Licencia del producto y condiciones de publicación siguen pendientes.
 
 ## Validación inicial local
 
@@ -42,7 +46,7 @@ La [ejecución 3](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42445
 
 El workflow conserva inventario y verificación como JSON y publica anotaciones de diagnóstico sin credenciales: entorno de herramientas y resumen de casos/hash. No se necesitaron credenciales almacenadas para diagnosticar el fallo: los logs detallados estaban protegidos, pero se resolvió mediante anotaciones públicas del propio workflow.
 
-El resultado de CI no sustituye el segundo equipo del usuario, Windows limpio ni interacción OpenGL en un runner gráfico. La imagen y toolchain real de cada ejecución quedan en ci-environment.json; no se afirma igualdad binaria entre el MSVC 2026 local y MSVC 2022 remoto.
+El resultado de CI no sustituye la validación del instalador final en VM Windows limpia ni las comprobaciones de interacción OpenGL de usuario. El segundo PC físico deja de ser requisito. La imagen y toolchain real de cada ejecución quedan en ci-environment.json; no se afirma igualdad binaria entre el MSVC 2026 local y MSVC 2022 remoto.
 
 ## Resultado final verificado
 
@@ -71,3 +75,11 @@ ZIP portátil interior: `STLCutStudioAI-0.1.0-portable-win-x64-20261108T04171026
 Evidencia local de la consulta remota: build/ci-final-run.json, ci-final-jobs.json, ci-final-annotations.json y ci-final-artifacts.json. Esta actualización final solo cambia documentación, por lo que no dispara otra compilación de push; el código y workflow verificados son los del commit indicado.
 
 Fuentes: [imagen windows-2022](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md), [checkout fijado](https://github.com/actions/checkout/tree/3d3c42e5aac5ba805825da76410c181273ba90b1), [upload-artifact fijado](https://github.com/actions/upload-artifact/tree/cf430e030ddbb5b0abf93d22962f4752f3646cd9).
+
+## Workflow preparado para 0.2
+
+Añadido bootstrap oficial de lib3mf 2.5.0 con SHA-256 y verificación del SDK. A los cinco casos de importación previos se suman STL binario con encabezado PK, un cubo 3MF, una extensión obligatoria desconocida y dos ciclos corte/exportación/reimportación (STL y 3MF): diez casos. El empaquetado incluye DLL y avisos de lib3mf. Diez casos ejecutados localmente contra el ZIP 0.2, con PATH mínimo y manifiesto de 72 archivos más manifiesto, satisfactorios. Estos cambios permanecen locales: no se ejecutó una nueva compilación remota ni se publicó otro artefacto GitHub durante este incremento. La evidencia nueva y el hash del ZIP están en PHASE_02.md.
+
+## Workflow ampliado a 0.2.1
+
+Adquisición de Manifold 3.5.4 con SHA-256 y contraste de fuentes; compilación estática sin dependencias opcionales ni pruebas upstream. Cinco casos adicionales: tubo hueco, cavidad encerrada, aristas coplanares, cara cóncava coplanar y contorno >4096; validan cierre/orientación, volumen, reimportación y huecos sin rellenar. Los quince casos del bloque se ejecutaron localmente contra el ZIP 0.2.1 con PATH mínimo. No se ejecutó GitHub Actions ni se subieron cambios en este incremento.

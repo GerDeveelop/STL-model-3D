@@ -1,5 +1,9 @@
 # Configuración Windows
 
+> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+
+> Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
+
 Actualizado: 2026-11-07. Qt Base 6.8.3 MSVC x64 instalado localmente; configuración y compilación Release con importador y visor satisfactorias. OpenGL/OpenGLWidgets del mismo kit habilitados, sin nuevas descargas. Renderizado y controles comprobados en GPU local; véase VIEWER.md. Uso y contratos en STL_IMPORT.md. Arranque de ventana oculta y cierre normal comprobados, sin revisión visual interactiva.
 
 ## Herramientas comprobadas
@@ -64,6 +68,14 @@ Se verificó arranque oculto por API Windows: WaitForInputIdle satisfactorio, ve
 
 ## Pendientes
 
-Apertura desde diálogo de archivo STL real Unicode, cancelación durante preparación extensa, interacción manual visible, toolchain reproducible en dos equipos, CI y paquete DLL/plugins verificado en Windows limpio. El visor y los controles se comprobaron mediante malla en memoria y capturas; cancelar/cerrar mientras espera datos también se verificó. El ejecutable del directorio de build necesita el kit local; para ejecución portátil se generó un ZIP con DLL/plugins/CRT y validación local sin PATH del kit. Véase BUILD_AND_RELEASE.md; Windows limpio y segundo equipo siguen pendientes. La licencia del producto y cumplimiento de distribución siguen pendientes; véase [inventario](../THIRD_PARTY_NOTICES.md).
+Pendientes funcionales: apertura desde diálogo de STL real Unicode, retención de modelo ante fallo/cancelación y cancelación durante preparación extensa; detalles en PERFORMANCE.md y VIEWER.md. Release local, CI y ZIP provisional están verificados con sus límites documentados. No se exige segundo PC físico. La entrega final en fase 1.0 será un instalador .exe con dependencias, validado en VM Windows limpia. Véanse BUILD_AND_RELEASE.md y el inventario de terceros para alcance y distribución.
 
 Sin carpetas ni archivos de pruebas propios. Comprobaciones ejecutadas en línea; archivos de detección CMake y herramientas de terceros bajo build/ pertenecen al entorno de construcción. No se añadieron Python/IA a la aplicación, VTK, CGAL ni manifiestos vcpkg vacíos. Fase 0.1 abierta.
+
+## Dependencia adicional 0.2: lib3mf 2.5.0
+
+Antes de compilar, ejecutar `./scripts/bootstrap-lib3mf.ps1`. Descarga explícita y SHA-256 fijado; reutiliza una instalación solo tras contrastar sus headers, import library, DLL y licencia con el ZIP verificado. Instala únicamente bajo `build/deps/lib3mf-2.5.0/lib3mf_sdk`, ignorado por Git. No hay variables de entorno, Python de aplicación ni API keys nuevas. CMake exige ese SDK, enlaza su import library y copia lib3mf.dll junto al exe. Luego se utiliza el mismo `scripts/build-windows.ps1` y preset de Windows. Detalles de origen/licencia en THIRD_PARTY_NOTICES.md y PHASE_02.md.
+
+## Dependencia de corte 0.2.1: Manifold 3.5.4
+
+Ejecutar `./scripts/bootstrap-manifold.ps1` antes del build, además de los bootstraps Qt y lib3mf. Fuente fijada por commit y SHA-256; instalación y contraste de archivos bajo build/deps, sin variables de entorno adicionales ni cambios del sistema. CMake compila Manifold estático con pruebas/bindings/descargas implícitas/CrossSection/TBB desactivados. No instalar Python, CGAL o Clipper2. El mismo preset y scripts de build se mantienen. Origen y configuración completa en MANIFOLD_CUT.md.

@@ -103,7 +103,7 @@ try {
     Get-ChildItem -LiteralPath $portable -Recurse -File | Where-Object Extension -in @('.dll','.exe') |
         ForEach-Object { Assert-Amd64 $_.FullName }
     $notices = Join-Path $portable 'licenses'
-    New-Item -ItemType Directory -Path $notices | Out-Null
+    New-Item -ItemType Directory -Path $notices -Force | Out-Null
     Copy-Item -LiteralPath $licenseRoot -Destination (Join-Path $notices 'qtbase-6.8.3') -Recurse
     Copy-Item -LiteralPath (Join-Path $QtRoot 'sbom') -Destination (Join-Path $notices 'qt-sbom') -Recurse
     Copy-Item -LiteralPath (Join-Path $repoRoot 'THIRD_PARTY_NOTICES.md') -Destination $portable
@@ -113,7 +113,8 @@ STL Cut Studio AI $version - paquete portátil de validación Windows x64
 Extraiga TODO el ZIP y abra STLCutStudioAI.exe. No copie el exe aislado.
 No requiere el kit Qt en PATH; incluye sus DLL/plugins y runtime MSVC local.
 Requiere Windows 10/11 x64 y controlador OpenGL 3.3 compatible para el visor.
-No incluye IA, corte/exportación, instalador, actualizador ni firma digital.
+Incluye importación STL/3MF, corte por plano con límites documentados y exportación STL.
+No incluye IA, instalador final, actualizador ni firma digital.
 STL no define unidades. La apertura no modifica el archivo fuente.
 
 Licencias: THIRD_PARTY_NOTICES.md y licenses/. El producto aún no tiene
@@ -129,11 +130,13 @@ No se afirma validación en otro PC ni Windows limpio.
                    bytes=$_.Length; sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()}
     })
     $validationScope = if ($env:GITHUB_ACTIONS -eq 'true') {
-        'github-actions-windows-2022; clean Windows and second PC pending'
-    } else { 'local-only; clean Windows and second PC pending' }
+        'github-actions-windows-2022; final installer and clean Windows VM validation pending for 1.0'
+    } else { 'local-only; final installer and clean Windows VM validation pending for 1.0' }
     $manifest = [ordered]@{schema_version=1; application='STLCutStudioAI'; version=$version;
         created_utc=$timestamp; platform='windows-x64'; configuration='Release';
         qt_version=$qtVersion; msvc_runtime_version=$crtVersion;
+        lib3mf_version='2.5.0';
+        manifold_version='3.5.4'; manifold_linkage='static';
         validation_scope=$validationScope;
         manifest_excludes_itself=$true; files=$files}
     Write-Utf8 (Join-Path $portable 'manifest.json') ($manifest | ConvertTo-Json -Depth 8)
