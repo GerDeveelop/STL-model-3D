@@ -1,6 +1,6 @@
 # Configuración Windows
 
-Actualizado: 2026-11-06. Qt Base 6.8.3 MSVC x64 instalado localmente; configuración y compilación Release con importador STL satisfactorias. Uso y contratos en STL_IMPORT.md. Arranque de ventana oculta y cierre normal comprobados, sin revisión visual interactiva.
+Actualizado: 2026-11-07. Qt Base 6.8.3 MSVC x64 instalado localmente; configuración y compilación Release con importador y visor satisfactorias. OpenGL/OpenGLWidgets del mismo kit habilitados, sin nuevas descargas. Renderizado y controles comprobados en GPU local; véase VIEWER.md. Uso y contratos en STL_IMPORT.md. Arranque de ventana oculta y cierre normal comprobados, sin revisión visual interactiva.
 
 ## Herramientas comprobadas
 
@@ -32,7 +32,7 @@ SHA-256 calculado localmente: 41688269fac0565db956c66d9eecae777d16197e0c02cd81b8
 
 La descarga se hizo con urllib.request de Python, comparando SHA-1 con el archivo .sha1 oficial antes de extraer. El SHA-256 es referencia local del archivo recibido, no un hash publicado por Qt. Metadatos: build/tooling/qtbase-download.json. Archivo comprimido en el mismo directorio. Se extrajo con `tar -xf <archivo> -C <destino>` al prefijo indicado. `bin/qmake.exe -query QT_VERSION` devolvió 6.8.3.
 
-No se modificaron PATH ni variables persistentes del sistema. Kit y binarios están bajo build/, excluido de Git. Borrar esa carpeta también borraría el kit; conservar el archivo verificado o reinstalar desde el origen documentado. No hay instalación automatizada en el repositorio todavía.
+No se modificaron PATH ni variables persistentes del sistema. Kit y binarios están bajo build/, excluido de Git. Borrar esa carpeta también borraría el kit; conservar el archivo verificado o reinstalar desde el origen documentado. Existe scripts/bootstrap-windows.ps1 para adquirir y verificar exactamente este kit dentro de build/. No instala MSVC, SDK, CMake o Ninja; véase CI.md para uso en el runner.
 
 ## Compilación comprobada
 
@@ -64,6 +64,6 @@ Se verificó arranque oculto por API Windows: WaitForInputIdle satisfactorio, ve
 
 ## Pendientes
 
-Apertura GUI de archivo STL válido, cancelación durante importación, visor, revisión visual, toolchain reproducible en dos equipos, CI y paquete DLL/plugins verificado en Windows limpio. El ejecutable necesita el kit local; no es una distribución autónoma. La licencia del producto y cumplimiento de distribución siguen pendientes; véase [inventario](../THIRD_PARTY_NOTICES.md).
+Apertura desde diálogo de archivo STL real Unicode, cancelación durante preparación extensa, interacción manual visible, toolchain reproducible en dos equipos, CI y paquete DLL/plugins verificado en Windows limpio. El visor y los controles se comprobaron mediante malla en memoria y capturas; cancelar/cerrar mientras espera datos también se verificó. El ejecutable del directorio de build necesita el kit local; para ejecución portátil se generó un ZIP con DLL/plugins/CRT y validación local sin PATH del kit. Véase BUILD_AND_RELEASE.md; Windows limpio y segundo equipo siguen pendientes. La licencia del producto y cumplimiento de distribución siguen pendientes; véase [inventario](../THIRD_PARTY_NOTICES.md).
 
 Sin carpetas ni archivos de pruebas propios. Comprobaciones ejecutadas en línea; archivos de detección CMake y herramientas de terceros bajo build/ pertenecen al entorno de construcción. No se añadieron Python/IA a la aplicación, VTK, CGAL ni manifiestos vcpkg vacíos. Fase 0.1 abierta.

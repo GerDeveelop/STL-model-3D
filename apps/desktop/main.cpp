@@ -1,9 +1,13 @@
 #include "core/io/StlReader.h"
+#include "MeshView.h"
 
 #include <QAction>
 #include <QApplication>
 #include <QCloseEvent>
 #include <QCoreApplication>
+#include <QClipboard>
+#include <QDebug>
+#include <QElapsedTimer>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -17,9 +21,13 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QStatusBar>
+#include <QSplitter>
+#include <QScrollArea>
 #include <QThread>
+#include <QToolBar>
 #include <QVBoxLayout>
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <fcntl.h>
@@ -28,8 +36,58 @@
 #include <memory>
 #include <sstream>
 #include <stop_token>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
 
 namespace {
+stlcut::Mesh readStdin(std::stop_token stop = {})
+{
+    if (_setmode(_fileno(stdin), _O_BINARY) == -1) {
+        throw std::runtime_error("No se pudo configurar la entrada binaria.");
+    }
+    std::string data;
+    std::array<char,65536> block;
+    auto append = [&](std::size_t bytes) {
+        if (data.size()+bytes>stlcut::maxFileBytes) {
+            throw std::runtime_error("El archivo STL supera el límite de 256 MiB.");
+        }
+        data.append(block.data(),bytes);
+    };
+    if (stop.stop_possible()) {
+        // Poll a pipe before reading so Cancel/Close also work if the producer stalls.
+        const auto pipe=GetStdHandle(STD_INPUT_HANDLE);
+        if (GetFileType(pipe)!=FILE_TYPE_PIPE) {
+            throw std::runtime_error("--view-stdin requiere una tubería de bytes.");
+        }
+        for (;;) {
+            if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
+            DWORD available{};
+            if (!PeekNamedPipe(pipe,nullptr,0,nullptr,&available,nullptr)) {
+                if (GetLastError()==ERROR_BROKEN_PIPE) { break; }
+                throw std::runtime_error("No se pudo leer la tubería de entrada.");
+            }
+            if (!available) { Sleep(10); continue; }
+            DWORD bytes{};
+            if (!ReadFile(pipe,block.data(),std::min<DWORD>(available,static_cast<DWORD>(block.size())),&bytes,nullptr)) {
+                throw std::runtime_error("Error de lectura en la tubería de entrada.");
+            }
+            append(bytes);
+        }
+    } else {
+        while (std::cin.read(block.data(), block.size()) || std::cin.gcount()) {
+            append(static_cast<std::size_t>(std::cin.gcount()));
+        }
+        if (std::cin.bad()) { throw std::runtime_error("Error leyendo stdin."); }
+    }
+    const auto size=data.size();
+    std::istringstream input(std::move(data),std::ios::in|std::ios::binary);
+    return stlcut::readStl(input,size,stop);
+}
 QJsonArray vectorJson(const stlcut::Vec3& p) { return {p.x, p.y, p.z}; }
 QJsonObject summary(const stlcut::Mesh& mesh)
 {
@@ -52,24 +110,7 @@ int inspect(int argc, char* argv[])
         stlcut::Mesh mesh;
         const auto args = app.arguments();
         if (args.size() == 2 && args[1] == QStringLiteral("--inspect-stdin")) {
-            if (_setmode(_fileno(stdin), _O_BINARY) == -1) {
-                throw std::runtime_error("No se pudo configurar la entrada binaria.");
-            }
-            std::string data;
-            std::array<char, 65536> block;
-            while (std::cin.read(block.data(), block.size()) || std::cin.gcount()) {
-                const auto bytes = static_cast<std::size_t>(std::cin.gcount());
-                if (data.size() + bytes > stlcut::maxFileBytes) {
-                    throw std::runtime_error("El archivo STL supera el límite de 256 MiB.");
-                }
-                data.append(block.data(), bytes);
-            }
-            if (std::cin.bad()) { throw std::runtime_error("Error leyendo stdin."); }
-            std::istringstream input(std::move(data), std::ios::in | std::ios::binary);
-            input.seekg(0, std::ios::end);
-            const auto size = input.tellg();
-            input.seekg(0);
-            mesh = stlcut::readStl(input, static_cast<std::uint64_t>(size));
+            mesh = readStdin();
         } else if (args.size() == 3 && args[1] == QStringLiteral("--inspect")) {
             mesh = stlcut::readStl(std::filesystem::path(args[2].toStdWString()));
         } else {
@@ -88,8 +129,11 @@ int inspect(int argc, char* argv[])
 struct ImportJob {
     std::stop_source cancellation;
     std::shared_ptr<stlcut::Mesh> mesh;
+    std::shared_ptr<const ViewMesh> view;
     QString error;
     bool cancelled{};
+    double inputMs{};
+    double presentationMs{};
 };
 
 QString vectorText(const stlcut::Vec3& p)
@@ -103,11 +147,10 @@ public:
     MainWindow()
     {
         setWindowTitle(QStringLiteral("STL Cut Studio AI %1").arg(QApplication::applicationVersion()));
-        resize(1100, 720);
+        resize(1250, 800);
         auto* central = new QWidget(this);
         auto* layout = new QVBoxLayout(central);
-        info_ = new QLabel(QStringLiteral("Abra un STL para consultar su geometría.\n"
-                                          "El visor 3D está pendiente de implementación."), central);
+        info_ = new QLabel(QStringLiteral("Abra un STL para visualizarlo y consultar su geometría."), central);
         info_->setObjectName(QStringLiteral("meshStatistics"));
         info_->setTextFormat(Qt::PlainText);
         info_->setWordWrap(true);
@@ -126,7 +169,23 @@ public:
         layout->addStretch();
         layout->addWidget(progress_);
         layout->addWidget(cancel_);
-        setCentralWidget(central);
+        viewerStatus_=new QLabel(central);
+        viewerStatus_->setTextFormat(Qt::PlainText);
+        viewerStatus_->setWordWrap(true);
+        viewerStatus_->setObjectName(QStringLiteral("rendererStatus"));
+        layout->addWidget(viewerStatus_);
+        auto* sidebar=new QScrollArea(this);
+        sidebar->setWidgetResizable(true);
+        sidebar->setWidget(central);
+        sidebar->setMinimumWidth(280);
+        sidebar->setMaximumWidth(400);
+        auto* split=new QSplitter(this);
+        view_=new MeshView(split);
+        split->addWidget(view_);
+        split->addWidget(sidebar);
+        split->setSizes({900,330});
+        setCentralWidget(split);
+        connect(view_,&MeshView::rendererStatus,viewerStatus_,&QLabel::setText);
 
         auto* fileMenu = menuBar()->addMenu(QStringLiteral("&Archivo"));
         open_ = fileMenu->addAction(QStringLiteral("Abrir &STL…"));
@@ -140,12 +199,43 @@ public:
         auto* quit = fileMenu->addAction(QStringLiteral("&Salir"));
         quit->setShortcut(QKeySequence::Quit);
         connect(quit, &QAction::triggered, this, &QMainWindow::close);
+        auto* viewMenu=menuBar()->addMenu(QStringLiteral("&Vista"));
+        auto* toolbar=addToolBar(QStringLiteral("Vista"));
+        toolbar->setMovable(false);
+        auto* fit=viewMenu->addAction(QStringLiteral("Encuadrar"));
+        fit->setShortcut(QKeySequence(Qt::Key_F));
+        connect(fit,&QAction::triggered,view_,&MeshView::fitMesh);
+        toolbar->addAction(fit);
+        auto* reset=viewMenu->addAction(QStringLiteral("Restablecer cámara"));
+        reset->setShortcut(QKeySequence(Qt::Key_Home));
+        connect(reset,&QAction::triggered,view_,&MeshView::resetCamera);
+        toolbar->addAction(reset);
+        auto* grid=viewMenu->addAction(QStringLiteral("Cuadrícula"));
+        grid->setCheckable(true); grid->setChecked(true);
+        connect(grid,&QAction::toggled,view_,&MeshView::showGrid);
+        toolbar->addAction(grid);
+        auto* axes=viewMenu->addAction(QStringLiteral("Ejes"));
+        axes->setCheckable(true); axes->setChecked(true);
+        connect(axes,&QAction::toggled,view_,&MeshView::showAxes);
+        toolbar->addAction(axes);
+        auto* capture=viewMenu->addAction(QStringLiteral("Copiar imagen"));
+        capture->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+C")));
+        toolbar->addAction(capture);
+        connect(capture,&QAction::triggered,this,[this] {
+            const auto image=view_->grabFramebuffer();
+            if (image.isNull()) {
+                statusBar()->showMessage(QStringLiteral("No se pudo capturar el visor"),5000);
+            } else {
+                QApplication::clipboard()->setImage(image);
+                statusBar()->showMessage(QStringLiteral("Imagen del visor copiada al portapapeles"),5000);
+            }
+        });
         auto* help = menuBar()->addMenu(QStringLiteral("A&yuda"));
         auto* about = help->addAction(QStringLiteral("&Acerca de…"));
         connect(about, &QAction::triggered, this, [this] {
             QMessageBox::about(this, QStringLiteral("STL Cut Studio AI"),
                                QStringLiteral("Versión %1\nImportación STL ASCII/binaria y estadísticas.\n"
-                                              "Visor 3D pendiente.").arg(QApplication::applicationVersion()));
+                                              "Visor 3D OpenGL con órbita, zoom y paneo.").arg(QApplication::applicationVersion()));
         });
         connect(cancel_, &QPushButton::clicked, this, [this] {
             if (job_) { job_->cancellation.request_stop(); }
@@ -163,15 +253,22 @@ public:
         }
     }
 
-    void importFile(const QString& path)
+    void importFile(const QString& path, bool fromStdin = false)
     {
         if (worker_) { return; }
         job_ = std::make_shared<ImportJob>();
         const auto job = job_;
-        worker_ = QThread::create([job, path] {
+        worker_ = QThread::create([job, path, fromStdin] {
             try {
-                job->mesh = std::make_shared<stlcut::Mesh>(stlcut::readStl(
-                    std::filesystem::path(path.toStdWString()), job->cancellation.get_token()));
+                const auto stop=job->cancellation.get_token();
+                QElapsedTimer timer;
+                timer.start();
+                job->mesh = std::make_shared<stlcut::Mesh>(fromStdin ? readStdin(stop) : stlcut::readStl(
+                    std::filesystem::path(path.toStdWString()), stop));
+                job->inputMs=static_cast<double>(timer.nsecsElapsed())/1e6;
+                timer.restart();
+                job->view=prepareViewMesh(*job->mesh,stop);
+                job->presentationMs=static_cast<double>(timer.nsecsElapsed())/1e6;
             } catch (const stlcut::ImportCancelled&) {
                 job->cancelled = true;
             } catch (const std::bad_alloc&) {
@@ -203,12 +300,17 @@ public:
                 outcome_->setText(QStringLiteral("No se pudo importar: %1\nSe conserva el modelo anterior.")
                                       .arg(job->error));
             } else {
+                qInfo().noquote() << "STL_IMPORT_METRIC" << QJsonDocument(QJsonObject{
+                    {"triangles",static_cast<qint64>(job->mesh->triangles.size())},
+                    {"input_ms",job->inputMs},{"presentation_ms",job->presentationMs},
+                    {"presentation_bytes",static_cast<qint64>(job->view->vertices.size()*sizeof(ViewVertex))}
+                }).toJson(QJsonDocument::Compact);
                 mesh_ = std::move(job->mesh);
+                view_->setMesh(std::move(job->view));
                 const auto& mesh = *mesh_;
                 info_->setText(QStringLiteral("Archivo: %1\nFormato: %2\nTriángulos: %3\n"
                                               "Dimensiones: %4\nCaja mínima: %5\nCaja máxima: %6\n\n"
-                                              "Unidades no especificadas por STL; escala original sin conversión.\n"
-                                              "Visor 3D pendiente de implementación.")
+                                              "Unidades no especificadas por STL; escala original sin conversión.")
                                    .arg(path, QString::fromStdString(mesh.format))
                                    .arg(static_cast<qulonglong>(mesh.triangles.size()))
                                    .arg(vectorText(mesh.bounds.dimensions()), vectorText(mesh.bounds.min),
@@ -233,6 +335,8 @@ private:
     QProgressBar* progress_{};
     QPushButton* cancel_{};
     QAction* open_{};
+    MeshView* view_{};
+    QLabel* viewerStatus_{};
 };
 }
 
@@ -249,6 +353,10 @@ int main(int argc, char* argv[])
     MainWindow window;
     window.show();
     const auto args = app.arguments();
-    if (args.size() == 2) { window.importFile(args[1]); }
+    if (args.size() == 2) {
+        if (args[1]==QStringLiteral("--view-stdin")) {
+            window.importFile(QStringLiteral("Entrada estándar"),true);
+        } else { window.importFile(args[1]); }
+    }
     return app.exec();
 }

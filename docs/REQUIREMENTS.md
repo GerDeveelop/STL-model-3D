@@ -1,6 +1,6 @@
 # Requisitos de fase 0.1
 
-Fecha: 2026-11-06. Estado: base compilada Release con Qt 6.8.3, arranque oculto y cierre normal comprobados; lector STL y estadísticas comprobados en memoria, GUI de error comprobada; apertura GUI de archivo válido, cancelación y visor pendientes. Véanse WINDOWS_SETUP.md y CHANGELOG.md. No se crean carpetas ni archivos de pruebas por instrucción del usuario.
+Fecha: 2026-11-07. Estado: importador y visor compilados Release con Qt 6.8.3. Malla cargada por memoria en GUI, estadísticas y renderizado comprobados, controles verificados por capturas. Cancelar/Cerrar esperando datos de tubería funcionan. Archivo real Unicode, cancelación durante preparación extensa e interacción manual pendientes. Véase VIEWER.md. Véanse WINDOWS_SETUP.md y CHANGELOG.md. No se crean carpetas ni archivos de pruebas por instrucción del usuario.
 
 ## Alcance
 

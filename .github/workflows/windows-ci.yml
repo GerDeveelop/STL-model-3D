@@ -1,0 +1,146 @@
+name: Windows x64 Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'core/**'
+      - 'scripts/**'
+      - 'third_party/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'THIRD_PARTY_NOTICES.md'
+      - '.gitattributes'
+      - '.github/workflows/windows-ci.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Download and verify Qt 6.8.3
+        run: ./scripts/bootstrap-windows.ps1
+
+      - name: Build and package Release x64
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw 'MSVC not found' }
+          Import-Module (Join-Path $vs 'Common7/Tools/Microsoft.VisualStudio.DevShell.dll')
+          Enter-VsDevShell -VsInstallPath $vs -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64 -vcvars_ver=14.44'
+          if ($env:VCToolsVersion -notlike '14.44.*') { throw 'MSVC 14.44 required' }
+          $crt = @(Get-ChildItem (Join-Path $env:VCToolsRedistDir 'x64') -Directory -Filter 'Microsoft.VC*.CRT')
+          if ($crt.Count -ne 1) { throw 'Ambiguous redistributable CRT' }
+          $inventory = [ordered]@{
+            commit = $env:GITHUB_SHA
+            image_os = $env:ImageOS
+            image_version = $env:ImageVersion
+            vs = $vs
+            msvc_toolset = $env:VCToolsVersion
+            sdk = $env:WindowsSDKVersion
+            cmake = (& cmake --version | Select-Object -First 1)
+            ninja = (& ninja --version)
+            python = (& python --version)
+            qt = '6.8.3'
+            crt = $crt[0].FullName
+          }
+          $inventory | ConvertTo-Json | Set-Content build/ci-environment.json -Encoding utf8
+          try {
+            ./scripts/package-windows.ps1 -CrtRoot $crt[0].FullName *> build/ci-build.log
+          } finally {
+            Get-Content build/ci-build.log -Tail 30 -ErrorAction SilentlyContinue
+          }
+
+      - name: Verify ZIP and import data in memory
+        run: |
+          @'
+          import hashlib, json, os, pathlib, struct, subprocess, zipfile
+          root = pathlib.Path.cwd()
+          archives = sorted((root / 'build/packages').glob('*/*.zip'))
+          assert len(archives) == 1, 'Expected one ZIP'
+          archive = archives[0]
+          digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+          assert (archive.parent / 'SHA256SUMS.txt').read_text().split()[0] == digest
+          destination = root / 'build' / ('portable ' + chr(241))
+          with zipfile.ZipFile(archive) as source:
+              assert source.testzip() is None
+              for member in source.infolist():
+                  assert (destination / member.filename).resolve().is_relative_to(destination.resolve())
+              source.extractall(destination)
+          executables = list(destination.glob('*/STLCutStudioAI.exe'))
+          assert len(executables) == 1
+          exe = executables[0]
+          manifest = json.loads((exe.parent / 'manifest.json').read_text(encoding='utf-8-sig'))
+          for item in manifest['files']:
+              content = (exe.parent / item['path']).read_bytes()
+              assert len(content) == item['bytes']
+              assert hashlib.sha256(content).hexdigest() == item['sha256'], item['path']
+          actual = {p.relative_to(exe.parent).as_posix() for p in exe.parent.rglob('*') if p.is_file()}
+          assert actual == {p['path'] for p in manifest['files']} | {'manifest.json'}
+          env = {k.upper(): v for k, v in os.environ.items()
+                 if not k.upper().startswith(('QT', 'QML', 'STL_QT_ROOT', 'CMAKE_PREFIX_PATH'))}
+          env['PATH'] = str(pathlib.Path(env['SYSTEMROOT']) / 'System32') + os.pathsep + env['SYSTEMROOT']
+          vertices = [(0,0,0),(10,0,0),(10,20,0),(0,20,0),(0,0,30),(10,0,30),(10,20,30),(0,20,30)]
+          faces = [(0,2,1),(0,3,2),(4,5,6),(4,6,7),(0,1,5),(0,5,4),(1,2,6),(1,6,5),(2,3,7),(2,7,6),(3,0,4),(3,4,7)]
+          records = b''.join(struct.pack('<12fH',0,0,0,*(n for i in face for n in vertices[i]),0) for face in faces)
+          binary = b'solid cube'.ljust(80,b' ') + struct.pack('<I',12) + records
+          ascii_stl = ('solid cube\n' + ''.join('facet normal 0 0 0\nouter loop\n' +
+                       ''.join('vertex %s %s %s\n' % vertices[i] for i in face) +
+                       'endloop\nendfacet\n' for face in faces) + 'endsolid cube\n').encode()
+          cases = [('binary-solid-header', binary, True), ('ascii', ascii_stl, True),
+                   ('empty', b'', False), ('truncated', binary[:-1], False),
+                   ('non-finite', ascii_stl.replace(b'vertex 0 0 0', b'vertex nan 0 0', 1), False)]
+          outcomes = []
+          for name, data, valid in cases:
+              result = subprocess.run([str(exe),'--inspect-stdin'], input=data, capture_output=True,
+                                      env=env, cwd=root, timeout=20)
+              output = json.loads(result.stdout)
+              assert output['ok'] == valid and result.returncode == (0 if valid else 1), (name, output)
+              if valid:
+                  assert output['triangles'] == 12 and output['dimensions'] == [10,20,30]
+                  assert output['min'] == [0,0,0] and output['max'] == [10,20,30]
+              outcomes.append({'case': name, 'passed': True, 'exit_code': result.returncode})
+          report = {'archive': archive.name, 'sha256': digest, 'manifest_files': len(manifest['files']),
+                    'cases': outcomes, 'path': env['PATH'], 'gui_tested': False, 'clean_windows_tested': False}
+          (root / 'build/ci-verification.json').write_text(json.dumps(report,indent=2),encoding='utf8')
+          print(json.dumps(report,indent=2))
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Package verification failed' }
+
+      - name: Upload package and evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-x64-${{ github.run_number }}
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          path: |
+            build/packages/**/*.zip
+            build/packages/**/SHA256SUMS.txt
+            build/packages/**/manifest.json
+            build/packages/**/windeployqt-*.log
+            build/ci-*.json
+            build/ci-build.log
+            build/tooling/qt-runtime-source.json
+            build/windows-x64-release/CMakeFiles/CMakeConfigureLog.yaml

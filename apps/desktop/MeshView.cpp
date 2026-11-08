@@ -1,0 +1,333 @@
+#include "MeshView.h"
+#include "core/io/StlReader.h"
+
+#include <QMatrix4x4>
+#include <QDebug>
+#include <QElapsedTimer>
+#include <QMouseEvent>
+#include <QOpenGLContext>
+#include <QPainter>
+#include <QShowEvent>
+#include <QSurfaceFormat>
+#include <QTimer>
+#include <QWheelEvent>
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <limits>
+#include <numbers>
+#include <numeric>
+#include <stdexcept>
+
+namespace {
+constexpr float radians = std::numbers::pi_v<float> / 180.f;
+constexpr float halfFov = 22.5f * radians;
+ViewVertex vertex(const QVector3D& p, const QVector3D& n = {})
+{ return {p.x(), p.y(), p.z(), n.x(), n.y(), n.z()}; }
+}
+
+std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::stop_token stop)
+{
+    auto result = std::make_shared<ViewMesh>();
+    const auto d = mesh.bounds.dimensions();
+    const double extent = std::max({d.x, d.y, d.z});
+    const double scale = extent > 0 ? extent : 1;
+    const stlcut::Vec3 center{std::midpoint(mesh.bounds.min.x, mesh.bounds.max.x),
+                              std::midpoint(mesh.bounds.min.y, mesh.bounds.max.y),
+                              std::midpoint(mesh.bounds.min.z, mesh.bounds.max.z)};
+    result->radius = std::max(0.01f, static_cast<float>(std::hypot(d.x/scale, d.y/scale, d.z/scale)));
+    result->floor = static_cast<float>((mesh.bounds.min.z - center.z) / scale * 2);
+    result->vertices.reserve(mesh.triangles.size() * 3);
+    for (const auto& triangle : mesh.triangles) {
+        if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
+        QVector3D p[3];
+        for (std::size_t i = 0; i < 3; ++i) {
+            const auto& v = triangle.vertices[i];
+            p[i] = {static_cast<float>((v.x-center.x)/scale*2),
+                    static_cast<float>((v.y-center.y)/scale*2),
+                    static_cast<float>((v.z-center.z)/scale*2)};
+        }
+        const auto normal = QVector3D::crossProduct(p[1]-p[0], p[2]-p[0]).normalized();
+        for (const auto& v : p) { result->vertices.push_back(vertex(v, normal)); }
+    }
+    if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
+    return result;
+}
+
+MeshView::MeshView(QWidget* parent) : QOpenGLWidget(parent)
+{
+    setObjectName(QStringLiteral("meshViewer"));
+    setAccessibleName(QStringLiteral("Visor 3D"));
+    setFocusPolicy(Qt::StrongFocus);
+    setMinimumSize(320, 240);
+    QSurfaceFormat format;
+    format.setVersion(3, 3);
+    format.setProfile(QSurfaceFormat::CoreProfile);
+    format.setDepthBufferSize(24);
+    setFormat(format);
+    setToolTip(QStringLiteral("Izquierdo: orbitar · Derecho/central: desplazar · Rueda: zoom · F: encuadrar"));
+}
+
+MeshView::~MeshView()
+{
+    if (context()) {
+        disconnect(context(), nullptr, this, nullptr);
+        releaseGL();
+    }
+}
+
+void MeshView::releaseGL()
+{
+    makeCurrent();
+    meshBuffer_.destroy();
+    linesBuffer_.destroy();
+    vao_.destroy();
+    program_.removeAllShaders();
+    ready_ = false;
+    meshDrawable_ = false;
+    doneCurrent();
+}
+
+void MeshView::fail(const QString& message)
+{
+    failure_ = message;
+    emit rendererStatus(message);
+}
+
+void MeshView::showEvent(QShowEvent* event)
+{
+    QOpenGLWidget::showEvent(event);
+    QTimer::singleShot(500, this, [this] {
+        if (!isValid()) {
+            fail(QStringLiteral("No se pudo iniciar OpenGL 3.3. Las estadísticas STL siguen disponibles."));
+        }
+    });
+}
+
+void MeshView::initializeGL()
+{
+    initializeOpenGLFunctions();
+    connect(context(), &QOpenGLContext::aboutToBeDestroyed, this, &MeshView::releaseGL,
+            Qt::DirectConnection);
+    failure_.clear();
+    const char* vertexShader = R"(
+        #version 330 core
+        layout(location=0) in vec3 position;
+        layout(location=1) in vec3 normal;
+        uniform mat4 mvp;
+        out vec3 faceNormal;
+        void main() { gl_Position = mvp * vec4(position,1.0); faceNormal=normal; }
+    )";
+    const char* fragmentShader = R"(
+        #version 330 core
+        in vec3 faceNormal;
+        uniform vec3 color;
+        uniform bool lighting;
+        out vec4 fragColor;
+        void main() {
+            float shade=1.0;
+            if(lighting && length(faceNormal)>0.00001) {
+                vec3 n=normalize(faceNormal);
+                if(!gl_FrontFacing) n=-n;
+                shade=0.30+0.70*max(dot(n,normalize(vec3(0.4,-0.6,1.0))),0.0);
+            }
+            fragColor=vec4(color*shade,1.0);
+        }
+    )";
+    if (!program_.addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader) ||
+        !program_.addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader) ||
+        !program_.link() || !meshBuffer_.create() || !linesBuffer_.create() || !vao_.create()) {
+        fail(QStringLiteral("No se pudo preparar el visor OpenGL: %1").arg(program_.log()));
+        return;
+    }
+    meshBuffer_.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    ready_ = true;
+    uploadPending_ = true;
+    emit rendererStatus(QStringLiteral("OpenGL %1 · %2")
+                            .arg(QString::fromLatin1(reinterpret_cast<const char*>(glGetString(GL_VERSION))),
+                                 QString::fromLatin1(reinterpret_cast<const char*>(glGetString(GL_RENDERER)))));
+}
+
+void MeshView::setMesh(std::shared_ptr<const ViewMesh> mesh)
+{
+    mesh_ = std::move(mesh);
+    meshDrawable_=false;
+    uploadPending_ = true;
+    resetCamera();
+}
+
+void MeshView::updateFitDistance()
+{
+    const float radius = mesh_ ? mesh_->radius : 1.75f;
+    const float aspect = static_cast<float>(std::max(1, width())) / std::max(1, height());
+    const float angle = std::min(halfFov, std::atan(std::tan(halfFov) * aspect));
+    distance_ = radius / std::sin(angle) * 1.15f;
+}
+
+void MeshView::fitMesh()
+{
+    target_ = {};
+    autoFit_ = true;
+    updateFitDistance();
+    update();
+}
+
+void MeshView::resetCamera()
+{ azimuth_=45; elevation_=30; fitMesh(); }
+void MeshView::showGrid(bool show) { grid_=show; update(); }
+void MeshView::showAxes(bool show) { axes_=show; update(); }
+void MeshView::resizeGL(int, int) { if (autoFit_) { updateFitDistance(); } }
+
+QVector3D MeshView::eyeDirection() const
+{
+    const float a=azimuth_*radians, e=elevation_*radians;
+    return {std::cos(e)*std::cos(a), std::cos(e)*std::sin(a), std::sin(e)};
+}
+
+void MeshView::paintGL()
+{
+    glClearColor(0.065f, 0.085f, 0.12f, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (!ready_) { return; }
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE); // Show both sides of open/inconsistently oriented meshes.
+    QMatrix4x4 projection;
+    const float aspect=static_cast<float>(std::max(1,width()))/std::max(1,height());
+    const float radius=mesh_ ? mesh_->radius : 1.75f;
+    projection.perspective(45, aspect, std::max(0.0001f,radius*0.001f),
+                           distance_ + target_.length() + radius*20 + 10);
+    QMatrix4x4 view;
+    view.lookAt(target_+eyeDirection()*distance_, target_, {0,0,1});
+    program_.bind();
+    program_.setUniformValue("mvp", projection*view);
+    QOpenGLVertexArrayObject::Binder vao(&vao_);
+    auto attributes = [this] {
+        program_.enableAttributeArray(0);
+        program_.enableAttributeArray(1);
+        program_.setAttributeBuffer(0, GL_FLOAT, offsetof(ViewVertex,x), 3, sizeof(ViewVertex));
+        program_.setAttributeBuffer(1, GL_FLOAT, offsetof(ViewVertex,nx), 3, sizeof(ViewVertex));
+    };
+    if (mesh_ && !mesh_->vertices.empty()) {
+        meshBuffer_.bind();
+        if (uploadPending_) {
+            meshDrawable_=false;
+            while (glGetError() != GL_NO_ERROR) {}
+            const auto bytes=mesh_->vertices.size()*sizeof(ViewVertex);
+            if (bytes > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+                fail(QStringLiteral("La malla supera el tamaño de buffer admitido por el visor."));
+            } else {
+                QElapsedTimer uploadTimer;
+                uploadTimer.start();
+                meshBuffer_.allocate(mesh_->vertices.data(), static_cast<int>(bytes));
+                if (glGetError() != GL_NO_ERROR) {
+                    fail(QStringLiteral("No hay memoria gráfica suficiente para dibujar esta malla."));
+                } else {
+                    meshDrawable_=true;
+                    qInfo().noquote() << "STL_GPU_UPLOAD_METRIC bytes=" << bytes
+                                      << "submit_ms=" << static_cast<double>(uploadTimer.nsecsElapsed())/1e6;
+                    if (!failure_.isEmpty()) {
+                        failure_.clear();
+                        emit rendererStatus(QStringLiteral("Visor OpenGL disponible"));
+                    }
+                }
+            }
+            uploadPending_=false;
+        }
+        if (meshDrawable_) {
+            attributes();
+            program_.setUniformValue("lighting", true);
+            program_.setUniformValue("color", QVector3D(0.28f,0.72f,0.91f));
+            glEnable(GL_POLYGON_OFFSET_FILL);
+            glPolygonOffset(1,1);
+            glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(mesh_->vertices.size()));
+            glDisable(GL_POLYGON_OFFSET_FILL);
+        }
+        meshBuffer_.release();
+    }
+    const float floor=mesh_ ? mesh_->floor : 0;
+    std::vector<ViewVertex> lines;
+    if (grid_) {
+        for (int i=-10; i<=10; ++i) {
+            const float p=static_cast<float>(i)*0.25f;
+            lines.push_back(vertex({-2.5f,p,floor})); lines.push_back(vertex({2.5f,p,floor}));
+            lines.push_back(vertex({p,-2.5f,floor})); lines.push_back(vertex({p,2.5f,floor}));
+        }
+    }
+    const auto gridCount=static_cast<GLsizei>(lines.size());
+    if (axes_) {
+        lines.push_back(vertex({0,0,floor})); lines.push_back(vertex({1.5f,0,floor}));
+        lines.push_back(vertex({0,0,floor})); lines.push_back(vertex({0,1.5f,floor}));
+        lines.push_back(vertex({0,0,floor})); lines.push_back(vertex({0,0,floor+1.5f}));
+    }
+    if (!lines.empty()) {
+        linesBuffer_.bind();
+        linesBuffer_.allocate(lines.data(), static_cast<int>(lines.size()*sizeof(ViewVertex)));
+        attributes();
+        program_.setUniformValue("lighting",false);
+        program_.setUniformValue("color",QVector3D(0.22f,0.28f,0.35f));
+        glDrawArrays(GL_LINES,0,gridCount);
+        if (axes_) {
+            glDepthFunc(GL_LEQUAL);
+            const QVector3D colors[]={{1,0.3f,0.3f},{0.35f,0.9f,0.4f},{0.3f,0.55f,1}};
+            for (int i=0; i<3; ++i) {
+                program_.setUniformValue("color",colors[i]);
+                glDrawArrays(GL_LINES,gridCount+i*2,2);
+            }
+            glDepthFunc(GL_LESS);
+        }
+        linesBuffer_.release();
+    }
+    program_.release();
+    glDisable(GL_DEPTH_TEST);
+    QPainter painter(this);
+    painter.setPen(QColor(210,220,235));
+    painter.drawText(14,22,QStringLiteral("X rojo · Y verde · Z azul   |   Z ↑"));
+    if (axes_) {
+        const QVector3D directions[]={{1,0,0},{0,1,0},{0,0,1}};
+        const QColor colors[]={QColor(255,77,77),QColor(89,230,102),QColor(77,140,255)};
+        const QString labels[]={QStringLiteral("X"),QStringLiteral("Y"),QStringLiteral("Z")};
+        const QPointF origin(64,80);
+        for (int i=0; i<3; ++i) {
+            const auto direction=view.mapVector(directions[i]);
+            const QPointF end=origin+QPointF(direction.x()*35,-direction.y()*35);
+            painter.setPen(QPen(colors[i],2));
+            painter.drawLine(origin,end);
+            painter.drawText(end+QPointF(3,-3),labels[i]);
+        }
+        painter.setPen(QColor(210,220,235));
+    }
+    if (!mesh_) { painter.drawText(rect(),Qt::AlignCenter,QStringLiteral("Abra un STL para visualizar la malla")); }
+    painter.drawText(14,height()-14,QStringLiteral("Orbitar: izquierdo   ·   Paneo: derecho/central   ·   Zoom: rueda   ·   Encuadrar: F"));
+}
+
+void MeshView::mousePressEvent(QMouseEvent* event)
+{ lastMouse_=event->position(); setFocus(); event->accept(); }
+
+void MeshView::mouseMoveEvent(QMouseEvent* event)
+{
+    const auto delta=event->position()-lastMouse_;
+    lastMouse_=event->position();
+    if (event->buttons() & (Qt::RightButton | Qt::MiddleButton)) {
+        const auto direction=eyeDirection();
+        const auto right=QVector3D::crossProduct({0,0,1},direction).normalized();
+        const auto up=QVector3D::crossProduct(direction,right).normalized();
+        const float factor=2*distance_*std::tan(halfFov)/std::max(1,height());
+        target_ += right * static_cast<float>(-delta.x())*factor + up*static_cast<float>(delta.y())*factor;
+        if (target_.length()>100) { target_=target_.normalized()*100; }
+        autoFit_=false;
+    } else if (event->buttons() & Qt::LeftButton) {
+        azimuth_=std::fmod(azimuth_-static_cast<float>(delta.x())*0.4f,360.f);
+        elevation_=std::clamp(elevation_+static_cast<float>(delta.y())*0.4f,-89.f,89.f);
+    }
+    update(); event->accept();
+}
+
+void MeshView::wheelEvent(QWheelEvent* event)
+{
+    const float radius=mesh_ ? mesh_->radius : 1.75f;
+    const float steps=static_cast<float>(event->angleDelta().y())/120;
+    distance_=std::clamp(distance_*std::exp(-steps*0.15f),radius*1.05f,radius*100);
+    autoFit_=false;
+    update(); event->accept();
+}

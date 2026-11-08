@@ -1,7 +1,7 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
 **Versión del documento:** 1.1  
-**Estado:** Al 2026-11-06, base C++20/Qt Widgets compilada Release x64 con Qt 6.8.3; arranque oculto y cierre normal comprobados. Importador ASCII/binario y estadísticas implementados y validados con entradas en memoria; visor y revisión visual pendientes. Contratos, políticas y límites vigentes en STL_IMPORT.md. Véanse CHANGELOG.md y WINDOWS_SETUP.md. Las referencias posteriores a ausencia de código describen el estado documental previo. Por instrucción posterior del usuario no se crean carpetas ni archivos de pruebas.
+**Estado:** Al 2026-11-07, importador ASCII/binario y visor OpenGL compilados Release x64 con Qt 6.8.3. Malla y controles verificados por capturas/eventos dirigidos, estadísticas originales preservadas. Paquete portátil con DLL/plugins/CRT generado y comprobado localmente; CI, segundo equipo, Windows limpio y validación ampliada pendientes. Visor documentado en VIEWER.md. Contratos, políticas y límites vigentes en STL_IMPORT.md. Véanse CHANGELOG.md y WINDOWS_SETUP.md. Las referencias posteriores a ausencia de código describen el estado documental previo. Por instrucción posterior del usuario no se crean carpetas ni archivos de pruebas.
 **Plataforma:** Windows 10/11 x64  
 **IDE:** Visual Studio Code + Codex  
 **Objetivo:** aplicación local instalable para importar, reparar, cortar y exportar mallas 3D; posteriormente generar modelos a partir de imágenes y texto.
@@ -33,7 +33,7 @@ STL Cut Studio AI permite:
 | Capa | Tecnología | Responsabilidad |
 |---|---|---|
 | Escritorio | C++20, Qt 6 Widgets o QML (elegir una estrategia documentada), CMake | Ventanas, menús, interacción y proyectos |
-| Visor | VTK con integración Qt, o Qt 3D si la integración inicial lo justifica | Renderizado de mallas y plano de corte |
+| Visor | QOpenGLWidget + Qt OpenGL/OpenGLWidgets 6.8.3, alternativa aprobada para fase 0.1 | Renderizado de mallas; plano de corte futuro |
 | Geometría | CGAL y, si se justifica, libigl | Intersecciones, cortes, reparación y operaciones booleanas |
 | IA | Python 3.11, servicio local FastAPI opcional | Adaptadores de modelos imagen→3D y texto→3D |
 | Paramétrico | OpenSCAD y/o Blender como herramientas externas opcionales | Modelado por instrucciones |

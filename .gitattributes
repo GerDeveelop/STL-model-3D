@@ -1,0 +1,9 @@
+* text=auto
+*.md text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.ps1 text eol=crlf
+# Preserve upstream license bytes: provenance.json verifies their exact SHA-256.
+third_party/qt/6.8.3/LICENSES/* -text

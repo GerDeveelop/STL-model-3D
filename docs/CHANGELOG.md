@@ -1,5 +1,56 @@
 # Registro de cambios
 
+## 2026-11-07 — Preparación de CI Windows y subida autorizada
+
+- Añadido workflow Windows x64 con acciones oficiales fijadas por commit, bootstrap Qt 6.8.3 con SHA-256, MSVC 14.44, empaquetado y verificaciones inline sin archivos de pruebas.
+- Añadido bootstrap-windows.ps1 para instalación acotada del kit dentro de build/, sin instalar compiladores ni paquetes Python.
+- Añadida conservación de ZIP, checksum, manifiesto y evidencias durante siete días; permisos mínimos y sin publicación de release.
+- Añadido .gitattributes para mantener exactos los bytes de licencias con hashes; normalizados contratos de finales de línea. El paquete registra si procede de Actions o validación local.
+- Documentados entorno, versiones y límites en CI.md. El usuario autorizó subir también los incrementos acumulados del visor y empaquetado.
+
+Validación local: sintaxis PowerShell/Python/YAML y bootstrap contra Qt existente correctos; cinco casos de importación y verificación de ZIP/manifiesto inline satisfactorios. Ejecución remota pendiente de observar tras el push; no se afirma éxito CI todavía.
+
+## 2026-11-07 — Paquete portátil Windows x64
+
+- Añadido scripts/package-windows.ps1: build Release, staging nuevo, despliegue Qt/OpenGL y plugins, runtime MSVC app-local desde VC/Redist, comprobación PE AMD64, qt.conf relativo, manifiesto de archivos, ZIP y SHA-256. No elimina salidas anteriores ni instala herramientas.
+- Ajustado destino CMake install a la raíz portátil. Versionados 37 textos de licencia de Qt Base v6.8.3 con procedencia y hashes, conservando SBOM y avisos dentro del paquete.
+- Corregido tratamiento del stderr nativo en PowerShell 5.1 para registrar avisos de windeployqt sin confundirlos con un fallo de despliegue; su exit code sigue siendo obligatorio.
+- Añadida BUILD_AND_RELEASE.md con comandos, arquitectura del paquete, validación y límites; actualizado inventario de terceros.
+
+Validación local: ZIP/CRC y hashes de inventario comprobados, extracción con espacios y ñ, PATH mínimo sin kit Qt y variables Qt retiradas. Inspección binaria: 12 triángulos y dimensiones 10×20×30, salida 0; vacío: salida 1. GUI cargó Qt, qwindows y runtime MSVC desde la carpeta extraída y registró envío de buffer OpenGL. Informe vigente y checksum en build/portable-validation.json. Sin archivos de pruebas propios ni publicación/push de binarios.
+
+Limitaciones: equipo con herramientas instaladas, sin Windows limpio ni segundo PC; firma, instalador, actualización, CI y distribución pública pendientes. El proceso GUI de comprobación se terminó por el coordinador; no se declara cierre normal ni validación interactiva del paquete.
+
+## 2026-11-07 — Revisión de cámara en ventana visible
+
+- Verificados directamente arrastre izquierdo (órbita), rueda (zoom), F (encuadre sin cambiar orientación) y Home (recuperación de cámara inicial), con capturas posteriores de la ventana visible.
+- Las estadísticas mantuvieron 12 triángulos y dimensiones 10×20×30. No se detectó fallo en esas acciones y no se modificó código.
+- El usuario confirmó haber realizado el arrastre derecho para paneo; las capturas posteriores no aislaron el visor, por lo que no se declara corroboración visual independiente de ese desplazamiento. Se conserva la evidencia previa por eventos dirigidos/framebuffer.
+- Actualizada PERFORMANCE.md distinguiendo observación directa, comprobación asistida y pendientes. Sin archivos de pruebas ni nuevo commit/push.
+
+## 2026-11-07 — Validación de cargas y cancelación
+
+- Añadidas métricas QElapsedTimer para recepción/análisis, preparación de vértices y envío de buffer GPU. Sin dependencias nuevas, API keys ni cambios en los contratos de malla.
+- Medidas cuatro superficies generadas en memoria: 10k, 100k, 1M y 2M triángulos. Las cuatro completaron la carga; la mayor registró 573.42 ms de recepción/análisis, 124.80 ms de preparación, 199.97 ms de envío gráfico y pico residente de 690.94 MiB.
+- Observada malla de 10k en ventana visible y cancelación durante recepción de una carga de 2M; cierre posterior normal 0. La revisión manual de cámara no se dio por completada por cambios de foco durante interacción física.
+- Documentados método, hardware, límites, limpieza intencional de procesos y evidencias en PERFORMANCE.md; actualizados enlaces y pendientes.
+
+Validación: Release x64 compilado sin warnings C++ detectados. Datos de benchmark e informes bajo build/, sin archivos STL ni fuentes de pruebas. La terminación 1 de las cuatro cargas fue limpieza intencional del coordinador tras dos segundos, no un crash; el caso de cancelación cerró con 0. Envío gráfico no mide finalización GPU ni FPS; RAM no equivale a VRAM. Sesiones previas interrumpidas/ocultas descartadas.
+
+Pendiente: sesión manual de controles, diálogo Unicode, retención de malla previa, cancelación dentro de parser/preparación, VRAM real, otros equipos, CI y distribución. Sin nuevo commit/push durante esta validación.
+
+## 2026-11-07 — Visor 3D OpenGL
+
+- Integrado QOpenGLWidget con Qt OpenGL/OpenGLWidgets 6.8.3 del kit existente, sin nuevas descargas ni cambios en el núcleo geométrico.
+- Añadidos adaptador de malla en segundo plano, buffers GPU, iluminación plana y renderizado a dos caras. Centrado/normalización solo para presentación; estadísticas y coordenadas originales preservadas.
+- Añadidos órbita, zoom, paneo, encuadre F, restablecimiento Home, cuadrícula XY, ejes y orientación Z arriba. Barra y menú Vista con guías y copia del framebuffer al portapapeles.
+- Añadida entrada GUI --view-stdin por tubería, con cancelación incluso mientras espera datos del productor. Inspección CLI existente conservada.
+- Documentados uso, dependencias, contratos, memoria y resultados en VIEWER.md; actualizados documentos de estado y licencias.
+
+Validación: build Release x64 satisfactorio sin warnings C++ detectados; OpenGL 3.3.0 NVIDIA 610.88 / GeForce RTX 3060 Ti. Malla binaria de 12 triángulos generada en memoria importada en GUI, estadísticas 10×20×30 intactas, captura 911×720 inspeccionada. Verificados por capturas e interacción dirigida: cuadrícula/ejes, órbita, zoom, paneo, encuadre y restablecimiento a imagen inicial. Cancelar/Cerrar con tubería esperando datos: salida 0. Regresión CLI de cubo/vacío/truncado correcta. Evidencias en build/ referenciadas en VIEWER.md, sin archivos STL ni fuentes de pruebas.
+
+Limitaciones: pendiente interacción manual visible, diálogo con archivo real Unicode, retención de malla previa ante nueva importación fallida, cancelación durante preparación extensa, rendimiento de mallas grandes, otros controladores, CI, segundo equipo y distribución autónoma. La fase 0.1 sigue abierta. Los cambios de este incremento quedan locales, sin nuevo commit/push.
+
 ## 2026-11-06 — Importación STL y estadísticas
 
 - Implementado núcleo C++20 independiente de Qt: malla, caja envolvente e importador ASCII/binario con límites inclusivos de 256 MiB y 2 millones de triángulos.

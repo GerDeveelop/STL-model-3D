@@ -1,6 +1,6 @@
 # Importación STL — incremento 0.1
 
-Fecha: 2026-11-06. Alcance aprobado: ASCII/binario, estadísticas, importación en segundo plano y cancelación. Sin nuevas librerías, visor ni reparación.
+Fecha del importador: 2026-11-06. Alcance: ASCII/binario, estadísticas, importación en segundo plano y cancelación. Actualización 2026-11-07: conectado al visor OpenGL; véase VIEWER.md para preparación, controles y validación. Sin reparación.
 
 ## Uso
 
@@ -41,4 +41,4 @@ Build Release x64 satisfactorio, sin warnings C++ detectados en `build/import-bu
 - 10 casos posteriores al ajuste final de signos y cancelación: signo doble, signo positivo/exponente, desbordamiento de dimensiones, 10k/100k/1M/2M triángulos, rechazo de 2000001 triángulos, más de 256 MiB y ruta Unicode inexistente. Todos satisfactorios. Resultados: `build/import-boundaries.json`. Tiempos completos de proceso/entrada en memoria observados: 0.023/0.037/0.172/0.332 s para 10k/100k/1M/2M; no son benchmarks de disco ni garantías de rendimiento y no se midió RAM máxima.
 - GUI oculta con ruta inexistente: accesibilidad de Windows encontró el mensaje de error y conservación del modelo anterior; ventana operativa y cierre con salida 0. Evidencia: `build/import-ui-elements.json`, stderr vacío en `build/import-ui-stderr.log`.
 
-Pendiente: abrir un STL real con ruta Unicode, verificar visualmente estadísticas, cancelar una importación extensa y conservar un modelo previamente cargado ante error/cancelación. La comprobación GUI de error partía de una escena vacía; no demuestra conservación de un modelo real. No se ejecutaron fixtures de archivo por la instrucción de no crear archivos de pruebas. Visor, CI, segundo equipo, VM limpia y cierre completo de fase siguen pendientes.
+Pendiente: abrir un STL real con ruta Unicode, verificar visualmente estadísticas, cancelar una importación extensa y conservar un modelo previamente cargado ante error/cancelación. La comprobación GUI de error partía de una escena vacía; no demuestra conservación de un modelo real. No se ejecutaron fixtures de archivo por la instrucción de no crear archivos de pruebas. El visor se implementó y verificó mediante capturas en el incremento del 2026-11-07, con entrada por memoria; detalles en VIEWER.md. CI, segundo equipo, VM limpia y cierre completo de fase siguen pendientes.
