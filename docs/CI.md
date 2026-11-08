@@ -1,6 +1,6 @@
 # CI Windows x64
 
-Fecha: 2026-11-07. Workflow subido y primera ejecución satisfactoria observada en el commit d88bd05; correcciones y evidencia abajo. El usuario autorizó subir los cambios acumulados y ejecutar Actions. No se publica un release ni se instalan servicios/secretos adicionales.
+Fecha: 2026-11-07. Workflow subido y ejecución final 4 satisfactoria en el commit 20c6c3b; correcciones y evidencia abajo. El usuario autorizó subir los cambios acumulados y ejecutar Actions. No se publica un release ni se instalan servicios/secretos adicionales.
 
 ## Flujo
 
@@ -36,12 +36,38 @@ Bootstrap ejecutado contra el archivo Qt local ya verificado, sintaxis PowerShel
 
 ## Ejecuciones remotas y correcciones
 
-Las ejecuciones 1 y 2 fallaron en extracción del archivo .7z con tar del runner. La anotación pública de la segunda identificó esa etapa. Se utiliza 7-Zip preinstalado, conservando tar como alternativa local y el log qt-extract.log. Las acciones v4 iniciales emitían un aviso por Node 20: se actualizaron a las revisiones Node 24 fijadas arriba. Los avisos por ausencia de artefactos tras un fallo temprano ya no ocultan la causa original.
+Las ejecuciones 1 y 2 fallaron antes de empaquetar. La anotación pública de la segunda identificó la extracción del archivo .7z con tar del runner. Se utiliza 7-Zip preinstalado, conservando tar como alternativa local y el log qt-extract.log. Las acciones v4 iniciales emitían un aviso por Node 20: se actualizaron a las revisiones Node 24 fijadas arriba. Los avisos por ausencia de artefactos tras un fallo temprano ya no ocultan la causa original.
 
 La [ejecución 3](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42445885987), commit `d88bd05`, concluyó success. Conservó el artefacto `windows-x64-3` (15021233 bytes), con digest del contenedor de artefactos `sha256:447827a9fc7f56c6cb91ed5094ecc8351a5063885caa77689788ef84f8637a00`. Este digest no se debe confundir con SHA256SUMS.txt del ZIP portátil interior.
 
 El workflow conserva inventario y verificación como JSON y publica anotaciones de diagnóstico sin credenciales: entorno de herramientas y resumen de casos/hash. No se necesitaron credenciales almacenadas para diagnosticar el fallo: los logs detallados estaban protegidos, pero se resolvió mediante anotaciones públicas del propio workflow.
 
 El resultado de CI no sustituye el segundo equipo del usuario, Windows limpio ni interacción OpenGL en un runner gráfico. La imagen y toolchain real de cada ejecución quedan en ci-environment.json; no se afirma igualdad binaria entre el MSVC 2026 local y MSVC 2022 remoto.
+
+## Resultado final verificado
+
+[Ejecución 4 satisfactoria](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42446122445), commit `20c6c3b9cb65399861d283bac75237ed5292c864`. Todas las etapas concluyeron success: checkout, descarga/extracción Qt, compilación Release, empaquetado, verificación y subida de evidencias.
+
+Entorno observado en las anotaciones públicas e inventario:
+
+| Componente | Versión real |
+|---|---|
+| Imagen windows-2022 | win22, 20261101.353.1 |
+| MSVC toolset | 14.44.35207 |
+| Windows SDK | 10.0.26100.0 |
+| CMake | 3.31.6 |
+| Ninja | 1.13.2 |
+| Python auxiliar | 3.12.10 |
+| Qt Base | 6.8.3 |
+| 7-Zip | 26.05 |
+| CRT redistribuible | Microsoft.VC143.CRT, vcruntime140.dll 14.44.35211.0 |
+
+Los cinco casos pasaron: cubo binario con encabezado solid, cubo ASCII, vacío, truncado y coordenadas no finitas. Se verificaron 70 archivos del manifiesto además del manifiesto mismo; comparación de inventario exacta y checksum del ZIP correctos, ejecutando la copia extraída con PATH mínimo.
+
+[Artefacto windows-x64-4](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42446122445/artifacts/13603179337), disponible durante la retención de siete días: 15021586 bytes. Digest del contenedor de artefactos: `sha256:42e6d37ea829812bf23eaf9b568462d1c872046e35f8f2fd9cc2a0438c5a4a3c`.
+
+ZIP portátil interior: `STLCutStudioAI-0.1.0-portable-win-x64-20261108T041710269Z.zip`; SHA-256 `148d472ee5d33204ec5f2c61f5ad3306bdad2974279dbb220f0170c8f6c87882`. El sufijo es UTC; la ejecución corresponde a la sesión local del 2026-11-07 en Bogotá.
+
+Evidencia local de la consulta remota: build/ci-final-run.json, ci-final-jobs.json, ci-final-annotations.json y ci-final-artifacts.json. Esta actualización final solo cambia documentación, por lo que no dispara otra compilación de push; el código y workflow verificados son los del commit indicado.
 
 Fuentes: [imagen windows-2022](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md), [checkout fijado](https://github.com/actions/checkout/tree/3d3c42e5aac5ba805825da76410c181273ba90b1), [upload-artifact fijado](https://github.com/actions/upload-artifact/tree/cf430e030ddbb5b0abf93d22962f4752f3646cd9).

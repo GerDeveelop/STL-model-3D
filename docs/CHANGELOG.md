@@ -1,5 +1,15 @@
 # Registro de cambios
 
+## 2026-11-07 — CI remota verificada y artefacto disponible
+
+- Subidos los incrementos acumulados de visor, métricas, empaquetado, licencias y workflow a main.
+- Corregida extracción Qt con 7-Zip del runner y actualizadas acciones oficiales a checkout 7.0.1/upload-artifact 7.0.2, fijadas por commit y usando Node 24.
+- Añadidas anotaciones públicas de diagnóstico e inventario, sin credenciales. El acceso protegido a logs no fue necesario para resolver el fallo.
+- Ejecución 4, commit 20c6c3b, completada success en todas sus etapas. MSVC 14.44.35207, SDK 10.0.26100.0, Qt 6.8.3, CMake 3.31.6, Ninja 1.13.2, Python 3.12.10 y 7-Zip 26.05.
+- Verificados ZIP/inventario y cinco casos inline ASCII/binario/errores con PATH mínimo. Artefacto windows-x64-4 disponible con retención de siete días; enlaces, hashes y límites en CI.md.
+
+Validación remota: https://github.com/GerDeveelop/STL-model-3D/actions/runs/42446122445. Sin archivos de pruebas propios ni release publicado. Siguen pendientes segundo PC del usuario, Windows limpio y validaciones ampliadas de interfaz/GPU; no se declara cierre completo de fase 0.1.
+
 ## 2026-11-07 — Preparación de CI Windows y subida autorizada
 
 - Añadido workflow Windows x64 con acciones oficiales fijadas por commit, bootstrap Qt 6.8.3 con SHA-256, MSVC 14.44, empaquetado y verificaciones inline sin archivos de pruebas.

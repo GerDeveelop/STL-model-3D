@@ -2,7 +2,7 @@
 
 Aplicación de escritorio prevista para Windows 10/11 x64 orientada a importar, visualizar y, en fases posteriores, cortar y editar mallas 3D.
 
-**Estado al 2026-11-07:** aplicación C++20/Qt compilada Release x64 con importación STL ASCII/binaria, estadísticas y visor 3D OpenGL. Renderizado, órbita, zoom, paneo, encuadre, ejes y cuadrícula comprobados mediante capturas y eventos dirigidos. Paquete portátil generado y comprobado localmente; Windows limpio, CI, segundo equipo y validación ampliada pendientes.
+**Estado al 2026-11-07:** aplicación C++20/Qt compilada Release x64 con importación STL ASCII/binaria, estadísticas y visor 3D OpenGL. Renderizado, órbita, zoom, paneo, encuadre, ejes y cuadrícula comprobados mediante capturas y eventos dirigidos. Paquete portátil comprobado localmente y CI Windows verificada con artefacto descargable. Windows limpio, segundo equipo del usuario y validación ampliada pendientes.
 
 ## Documentación
 

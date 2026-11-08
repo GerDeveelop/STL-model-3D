@@ -28,7 +28,7 @@ La lectura STL y preparación de la copia de presentación usan QThread y stop_t
 | Licencia del producto | Uso personal, código abierto o comercial | Por confirmar |
 | Importación | Parser C++20 propio; Mesh double; 256 MiB y 2M triángulos | Aprobado e implementado; contrato en STL_IMPORT.md |
 | Geometría | CGAL u otra solución para fases posteriores | Fuera de fase 0.1 |
-| CI | GitHub Actions windows-2022, MSVC 14.44 y Qt verificado | Configurado; primera ejecución pendiente de observar, véase CI.md |
+| CI | GitHub Actions windows-2022, MSVC 14.44 y Qt verificado | Ejecución 4 satisfactoria: build, ZIP, cinco casos y artefacto; véase CI.md |
 | Paquete inicial | ZIP Release x64 con Qt/plugins y CRT local | Generado y verificado localmente; Windows limpio/segundo PC pendientes |
 
 Ninguna alternativa de esta tabla es una dependencia aprobada. Antes de incorporarla, registrar versión, origen, licencia, necesidad, forma de instalación y distribución. La compatibilidad se comprobará con compilación y pruebas, sin inventar hashes o resultados.
