@@ -155,4 +155,5 @@ jobs:
             build/ci-*.json
             build/ci-build.log
             build/tooling/qt-runtime-source.json
+            build/tooling/qt-extract.log
             build/windows-x64-release/CMakeFiles/CMakeConfigureLog.yaml

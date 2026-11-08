@@ -28,8 +28,17 @@ $qmake = Join-Path $qtRoot 'bin/qmake.exe'
 if (-not (Test-Path -LiteralPath $qmake)) {
     if (Test-Path -LiteralPath $qtRoot) { throw 'La instalacion Qt esta incompleta; no se sobrescribe.' }
     New-Item -ItemType Directory -Path $qtRoot | Out-Null
-    & tar -xf $archive -C $qtRoot
-    if ($LASTEXITCODE -ne 0) { throw 'No se pudo extraer Qt.' }
+    $sevenZip = Join-Path $env:ProgramFiles '7-Zip/7z.exe'
+    $extractLog = Join-Path $tools 'qt-extract.log'
+    if (Test-Path -LiteralPath $sevenZip) {
+        & $sevenZip x -y "-o$qtRoot" $archive *> $extractLog
+    } else {
+        & tar -xf $archive -C $qtRoot *> $extractLog
+    }
+    if ($LASTEXITCODE -ne 0) {
+        $detail = (Get-Content -LiteralPath $extractLog -Tail 12) -join ' '
+        throw "No se pudo extraer Qt: $detail"
+    }
 }
 $version = & $qmake -query QT_VERSION
 if ($LASTEXITCODE -ne 0 -or $version -ne '6.8.3') { throw 'El kit no es Qt 6.8.3.' }
