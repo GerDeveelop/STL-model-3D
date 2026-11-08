@@ -19,8 +19,8 @@ Las entradas de comprobación se generan en memoria dentro del workflow; no exis
 
 Acciones oficiales fijadas por commit y licencia MIT:
 
-- checkout v4: `11d5960a326750d5838078e36cf38b85af677262`.
-- upload-artifact v4: `ea165f8d65b6e75b540449e92b4886f43607fa02`.
+- checkout v7.0.1: `3d3c42e5aac5ba805825da76410c181273ba90b1`.
+- upload-artifact v7.0.2: `cf430e030ddbb5b0abf93d22962f4752f3646cd9`.
 
 Los commits y licencias se verificaron contra los repositorios oficiales al preparar este incremento. Qt está fijado por versión y hash; MSVC por serie. La imagen windows-2022, los parches de MSVC/SDK y herramientas preinstaladas pueden cambiar. `ci-environment.json` conserva commit, versión de imagen, toolset, SDK, CMake, Ninja, Python y CRT realmente usados: no se afirma reproducibilidad binaria con una imagen inmutable ni igualdad con el MSVC 2026 del equipo local.
 
@@ -34,4 +34,4 @@ El manifiesto distingue paquetes generados en Actions de validación local. El r
 
 Bootstrap ejecutado contra el archivo Qt local ya verificado, sintaxis PowerShell/Python y YAML revisadas, cinco casos inline del workflow satisfactorios contra el ZIP local. La descarga y compilación desde un runner nuevo se comprobarán mediante la primera ejecución remota; no se presentan como realizadas todavía.
 
-Fuentes: [imagen windows-2022](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md), [checkout fijado](https://github.com/actions/checkout/tree/11d5960a326750d5838078e36cf38b85af677262), [upload-artifact fijado](https://github.com/actions/upload-artifact/tree/ea165f8d65b6e75b540449e92b4886f43607fa02).
+Fuentes: [imagen windows-2022](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md), [checkout fijado](https://github.com/actions/checkout/tree/3d3c42e5aac5ba805825da76410c181273ba90b1), [upload-artifact fijado](https://github.com/actions/upload-artifact/tree/cf430e030ddbb5b0abf93d22962f4752f3646cd9).

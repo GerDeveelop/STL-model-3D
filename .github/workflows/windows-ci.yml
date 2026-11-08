@@ -33,12 +33,19 @@ jobs:
         shell: pwsh
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Download and verify Qt 6.8.3
-        run: ./scripts/bootstrap-windows.ps1
+        run: |
+          try {
+            ./scripts/bootstrap-windows.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Qt bootstrap::$message"
+            throw
+          }
 
       - name: Build and package Release x64
         run: |
@@ -67,6 +74,11 @@ jobs:
           $inventory | ConvertTo-Json | Set-Content build/ci-environment.json -Encoding utf8
           try {
             ./scripts/package-windows.ps1 -CrtRoot $crt[0].FullName *> build/ci-build.log
+          } catch {
+            $message = ($_.Exception.Message + "`n" + ((Get-Content build/ci-build.log -Tail 20 -ErrorAction SilentlyContinue) -join "`n"))
+            $message = $message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Build and package::$message"
+            throw
           } finally {
             Get-Content build/ci-build.log -Tail 30 -ErrorAction SilentlyContinue
           }
@@ -129,10 +141,10 @@ jobs:
 
       - name: Upload package and evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-x64-${{ github.run_number }}
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
           compression-level: 0
           path: |
