@@ -27,3 +27,5 @@ Fuentes Qt: [tag v6.8.3](https://code.qt.io/cgit/qt/qtbase.git/tag/?h=v6.8.3). S
 ## Herramientas exclusivas de CI
 
 Acciones oficiales bajo licencia MIT, fijadas por commit: [checkout v7.0.1](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/LICENSE) (`3d3c42e5aac5ba805825da76410c181273ba90b1`) y [upload-artifact v7.0.2](https://github.com/actions/upload-artifact/blob/cf430e030ddbb5b0abf93d22962f4752f3646cd9/LICENSE) (`cf430e030ddbb5b0abf93d22962f4752f3646cd9`). Se usan para checkout y conservación de evidencias; no son dependencias del ejecutable. El runner aporta Windows Server 2022, MSVC serie 14.44 y herramientas inventariadas por ejecución. Véase docs/CI.md.
+
+7-Zip, preinstalado en la imagen del runner, se usa únicamente para extraer Qt; no se incluye en el ZIP de la aplicación. La imagen consultada anuncia 26.05 y el bootstrap registra la versión real usada. Su [licencia oficial](https://www.7-zip.org/license.txt) incluye LGPL-2.1-or-later y términos BSD/unRAR para componentes concretos. No se descarga ni instala una versión adicional.

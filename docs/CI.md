@@ -1,6 +1,6 @@
 # CI Windows x64
 
-Fecha: 2026-11-07. Configuración inicial preparada; la ejecución remota se registrará después de observar su resultado. El usuario autorizó subir los cambios acumulados y ejecutar Actions. No se publica un release ni se instalan servicios/secretos adicionales.
+Fecha: 2026-11-07. Workflow subido y primera ejecución satisfactoria observada en el commit d88bd05; correcciones y evidencia abajo. El usuario autorizó subir los cambios acumulados y ejecutar Actions. No se publica un release ni se instalan servicios/secretos adicionales.
 
 ## Flujo
 
@@ -32,6 +32,16 @@ El manifiesto distingue paquetes generados en Actions de validación local. El r
 
 ## Validación inicial local
 
-Bootstrap ejecutado contra el archivo Qt local ya verificado, sintaxis PowerShell/Python y YAML revisadas, cinco casos inline del workflow satisfactorios contra el ZIP local. La descarga y compilación desde un runner nuevo se comprobarán mediante la primera ejecución remota; no se presentan como realizadas todavía.
+Bootstrap ejecutado contra el archivo Qt local ya verificado, sintaxis PowerShell/Python y YAML revisadas, cinco casos inline del workflow satisfactorios contra el ZIP local.
+
+## Ejecuciones remotas y correcciones
+
+Las ejecuciones 1 y 2 fallaron en extracción del archivo .7z con tar del runner. La anotación pública de la segunda identificó esa etapa. Se utiliza 7-Zip preinstalado, conservando tar como alternativa local y el log qt-extract.log. Las acciones v4 iniciales emitían un aviso por Node 20: se actualizaron a las revisiones Node 24 fijadas arriba. Los avisos por ausencia de artefactos tras un fallo temprano ya no ocultan la causa original.
+
+La [ejecución 3](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42445885987), commit `d88bd05`, concluyó success. Conservó el artefacto `windows-x64-3` (15021233 bytes), con digest del contenedor de artefactos `sha256:447827a9fc7f56c6cb91ed5094ecc8351a5063885caa77689788ef84f8637a00`. Este digest no se debe confundir con SHA256SUMS.txt del ZIP portátil interior.
+
+El workflow conserva inventario y verificación como JSON y publica anotaciones de diagnóstico sin credenciales: entorno de herramientas y resumen de casos/hash. No se necesitaron credenciales almacenadas para diagnosticar el fallo: los logs detallados estaban protegidos, pero se resolvió mediante anotaciones públicas del propio workflow.
+
+El resultado de CI no sustituye el segundo equipo del usuario, Windows limpio ni interacción OpenGL en un runner gráfico. La imagen y toolchain real de cada ejecución quedan en ci-environment.json; no se afirma igualdad binaria entre el MSVC 2026 local y MSVC 2022 remoto.
 
 Fuentes: [imagen windows-2022](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md), [checkout fijado](https://github.com/actions/checkout/tree/3d3c42e5aac5ba805825da76410c181273ba90b1), [upload-artifact fijado](https://github.com/actions/upload-artifact/tree/cf430e030ddbb5b0abf93d22962f4752f3646cd9).

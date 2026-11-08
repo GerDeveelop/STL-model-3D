@@ -25,14 +25,17 @@ if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant
     throw 'El archivo Qt existente no coincide con la version fijada; no se sobrescribe.'
 }
 $qmake = Join-Path $qtRoot 'bin/qmake.exe'
+$extractor = [ordered]@{name='reused-installation';version='not-run'}
 if (-not (Test-Path -LiteralPath $qmake)) {
     if (Test-Path -LiteralPath $qtRoot) { throw 'La instalacion Qt esta incompleta; no se sobrescribe.' }
     New-Item -ItemType Directory -Path $qtRoot | Out-Null
     $sevenZip = Join-Path $env:ProgramFiles '7-Zip/7z.exe'
     $extractLog = Join-Path $tools 'qt-extract.log'
     if (Test-Path -LiteralPath $sevenZip) {
+        $extractor = [ordered]@{name='7-Zip';version=(Get-Item -LiteralPath $sevenZip).VersionInfo.ProductVersion}
         & $sevenZip x -y "-o$qtRoot" $archive *> $extractLog
     } else {
+        $extractor = [ordered]@{name='tar';version=(& tar --version | Select-Object -First 1)}
         & tar -xf $archive -C $qtRoot *> $extractLog
     }
     if ($LASTEXITCODE -ne 0) {
@@ -47,7 +50,7 @@ foreach ($file in @('lib/cmake/Qt6/Qt6Config.cmake','bin/windeployqt.exe','sbom/
 }
 $env:STL_QT_ROOT = $qtRoot
 if ($env:GITHUB_ENV) { Add-Content -LiteralPath $env:GITHUB_ENV -Value "STL_QT_ROOT=$qtRoot" -Encoding utf8 }
-$record = [ordered]@{version='6.8.3';url=$url;bytes=39484220;sha256=$expectedHash;root=$qtRoot}
+$record = [ordered]@{version='6.8.3';url=$url;bytes=39484220;sha256=$expectedHash;root=$qtRoot;extractor=$extractor}
 [IO.File]::WriteAllText((Join-Path $tools 'qt-runtime-source.json'),($record | ConvertTo-Json),
                        (New-Object System.Text.UTF8Encoding($false)))
 Write-Output "Qt $version verificado: $qtRoot"

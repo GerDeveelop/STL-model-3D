@@ -70,8 +70,11 @@ jobs:
             python = (& python --version)
             qt = '6.8.3'
             crt = $crt[0].FullName
+            crt_version = (Get-Item (Join-Path $crt[0].FullName 'vcruntime140.dll')).VersionInfo.FileVersion
+            extractor = (Get-Content -Raw build/tooling/qt-runtime-source.json | ConvertFrom-Json).extractor
           }
           $inventory | ConvertTo-Json | Set-Content build/ci-environment.json -Encoding utf8
+          Write-Output ("::notice title=CI environment::" + ($inventory | ConvertTo-Json -Compress))
           try {
             ./scripts/package-windows.ps1 -CrtRoot $crt[0].FullName *> build/ci-build.log
           } catch {
@@ -136,6 +139,9 @@ jobs:
                     'cases': outcomes, 'path': env['PATH'], 'gui_tested': False, 'clean_windows_tested': False}
           (root / 'build/ci-verification.json').write_text(json.dumps(report,indent=2),encoding='utf8')
           print(json.dumps(report,indent=2))
+          print('::notice title=Package verification::' + json.dumps({
+              'archive': archive.name, 'sha256': digest, 'cases_passed': len(outcomes),
+              'manifest_files': len(manifest['files'])}))
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw 'Package verification failed' }
 
