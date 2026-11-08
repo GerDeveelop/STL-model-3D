@@ -2,7 +2,7 @@
 
 Aplicación de escritorio Windows 10/11 x64 para importar STL/3MF, visualizar mallas, cortar por plano y exportar piezas STL.
 
-**Estado al 2026-11-08:** versión de desarrollo 0.2.1 con importación STL/3MF, visor, corte por Manifold 3.5.4 y exportación STL. Verificados tubos/cavidades, coincidencias con caras/aristas, contornos superiores a 4096 vértices y cancelación. 63 casos inline y 15 del paquete satisfactorios localmente. Sigue requiriendo geometría válida y límites de recursos; contratos y evidencia en [MANIFOLD_CUT.md](docs/MANIFOLD_CUT.md). Sin nueva CI remota ni commit/push. La fase 0.2 continúa; el instalador final corresponde a 1.0.
+**Estado al 2026-11-08:** versión de desarrollo 0.2.1 con importación STL/3MF, visor, corte por Manifold 3.5.4 y exportación STL. Verificados tubos/cavidades, coincidencias con caras/aristas, contornos superiores a 4096 vértices y cancelación. 63 casos inline y 15 del paquete satisfactorios localmente. Sigue requiriendo geometría válida y límites de recursos; contratos y evidencia en [MANIFOLD_CUT.md](docs/MANIFOLD_CUT.md). Cambios subidos a main y [CI Windows 0.2.1 satisfactoria](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42503090070) en b1ede31: build, paquete y 15 casos; artefacto windows-x64-5. La fase 0.2 continúa; el instalador final corresponde a 1.0.
 
 La entrega final acordada es un instalador `.exe` para Windows x64 con las dependencias necesarias, para abrir la aplicación sin instalar Qt, Python ni herramientas de desarrollo manualmente. El ZIP portátil es provisional. Se elimina el segundo PC físico como requisito y se valida la instalación final en una VM Windows limpia.
 

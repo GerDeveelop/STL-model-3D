@@ -83,3 +83,15 @@ Añadido bootstrap oficial de lib3mf 2.5.0 con SHA-256 y verificación del SDK. 
 ## Workflow ampliado a 0.2.1
 
 Adquisición de Manifold 3.5.4 con SHA-256 y contraste de fuentes; compilación estática sin dependencias opcionales ni pruebas upstream. Cinco casos adicionales: tubo hueco, cavidad encerrada, aristas coplanares, cara cóncava coplanar y contorno >4096; validan cierre/orientación, volumen, reimportación y huecos sin rellenar. Los quince casos del bloque se ejecutaron localmente contra el ZIP 0.2.1 con PATH mínimo. No se ejecutó GitHub Actions ni se subieron cambios en este incremento.
+
+## Publicación y CI 0.2.1 — 2026-11-08
+
+Usuario autorizó commit/push. Código y workflow subidos a main en `b1ede31a1a54700b2bd2495f5119ca600895a796` (importación 3MF, corte Manifold y exportación STL). Se excluyeron build/, SDK/binarios/ZIP e informe local, y el archivo del usuario prueba.stl permanece sin añadir a Git.
+
+[Ejecución 5: Windows x64 Release](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42503090070): **success**. Adquisición/verificación Qt 6.8.3, lib3mf 2.5.0 y Manifold 3.5.4; build/paquete, quince casos del ZIP y subida del artefacto completados correctamente. Windows image win22 20261101.353.1; MSVC 14.44.35207, SDK 10.0.26100.0, CMake 3.31.6, Ninja 1.13.2, Python 3.12.10, CRT 14.44.35211.0 y 7-Zip 26.05. El bloque verificó 74 archivos más manifiesto y quince casos; no demuestra interacción GUI ni instalación en Windows limpio.
+
+[Artefacto windows-x64-5](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42503090070/artifacts/13625494676): 16 088 466 bytes, retención de siete días. Digest del contenedor de artefactos: `sha256:c915d37223fd8e104bb014f9bb6e1c17a44e9a77ce588b89b28d2d62169919c8`.
+
+ZIP interior: `STLCutStudioAI-0.2.1-portable-win-x64-20261108T170540075Z.zip`; SHA-256 `cee55363fc29221650e93b3d808d1ad5d603559114d6a77a9dc18eee2f5b2393`. No confundir con el ZIP local, cuyo build usa otro toolchain/timestamp. No es un release público ni el instalador final.
+
+Consulta realizada mediante API pública de GitHub; sin extraer credenciales. Evidencia local ignorada por Git: build/ci-021-run.json, ci-021-jobs.json, ci-021-annotations.json y ci-021-artifacts.json. La actualización documental posterior no modifica el código verificado ni dispara otro build por el filtro del workflow.

@@ -1,5 +1,11 @@
 # Registro de cambios
 
+## 2026-11-08 — Publicación 0.2.1 y CI Windows satisfactoria
+
+- Subido main en b1ede31a1a54700b2bd2495f5119ca600895a796, tras autorización del usuario. Fuera de Git: build/, binarios, SDK y prueba.stl.
+- Ejecución 5 completada success: bootstrap de las tres dependencias, build/paquete, quince comprobaciones inline y artefacto windows-x64-5. Inventario remoto de 74 archivos más manifiesto. Entorno, enlaces y checksums en CI.md.
+- Actualizados estados vigentes para reflejar publicación y verificación remota. Se mantienen los límites del motor, las limitaciones históricas de pruebas y la entrega del instalador final en fase 1.0. Sin release público ni fuentes/fixtures de pruebas propios.
+
 ## 2026-11-08 — Corte Manifold 0.2.1 autorizado
 
 - Sustituido el motor propio por Manifold 3.5.4 estático, fuente/commit/SHA-256 fijados, licencia Apache-2.0 y autores incluidos en el paquete. Sin CGAL, TBB, Clipper2, Python ni bindings de aplicación adicionales.

@@ -1,7 +1,7 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
 **Versión del documento:** 1.3
-**Estado:** versión de desarrollo 0.2.1 con importación STL/3MF, visor, corte por Manifold 3.5.4 y exportación STL. Verificados tubos/cavidades, coincidencias con caras/aristas, contornos superiores a 4096 vértices y cancelación. 63 casos inline y 15 del paquete satisfactorios localmente. Sigue requiriendo geometría válida y límites de recursos; contratos y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Sin nueva CI remota ni commit/push. La fase 0.2 continúa; el instalador final corresponde a 1.0.
+**Estado:** versión de desarrollo 0.2.1 con importación STL/3MF, visor, corte por Manifold 3.5.4 y exportación STL. Verificados tubos/cavidades, coincidencias con caras/aristas, contornos superiores a 4096 vértices y cancelación. 63 casos inline y 15 del paquete satisfactorios localmente. Sigue requiriendo geometría válida y límites de recursos; contratos y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Cambios subidos a main; CI Windows 0.2.1 satisfactoria en b1ede31 (build, paquete y 15 casos), con evidencia remota en CI.md. La fase 0.2 continúa; el instalador final corresponde a 1.0.
 **Plataforma:** Windows 10/11 x64  
 **IDE:** Visual Studio Code + Codex  
 **Objetivo:** aplicación local instalable para importar, reparar, cortar y exportar mallas 3D; posteriormente generar modelos a partir de imágenes y texto.
