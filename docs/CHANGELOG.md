@@ -6,7 +6,7 @@
 - Deshacer/Rehacer recuperan piezas, selección y plano. Geometría compartida; máximo 32 pasos, 256 piezas y 1 GiB contabilizado. Fallo/cancelación no altera el historial; corte nuevo elimina Rehacer. Sesión en memoria, sin guardar proyectos.
 - CLI de producción --edit-stdin, seis aceptaciones adicionales del workflow y documentación HISTORY.md. Sin nuevas dependencias ni archivos de pruebas propios.
 
-Validación local: Release, 22 casos de historial, 63 de regresión y 21 del paquete satisfactorios; interfaz visible revisada. Alcance de cancelación y evidencia en HISTORY.md. Sin commit/push ni nueva CI remota de este incremento; instalador final pendiente de fase 1.0.
+Validación local: Release, 22 casos de historial, 63 de regresión y 21 del paquete satisfactorios; interfaz visible revisada. Alcance de cancelación y evidencia en HISTORY.md. Publicado en main como 34b0cb7 por autorización del usuario; ejecución CI 6 satisfactoria con build, paquete, 21 casos y artefacto windows-x64-6. Evidencia en CI.md; instalador final pendiente de fase 1.0.
 
 ## 2026-11-08 — Publicación 0.2.1 y CI Windows satisfactoria
 

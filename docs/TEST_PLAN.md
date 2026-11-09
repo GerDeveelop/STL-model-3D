@@ -1,6 +1,6 @@
 # Plan de pruebas de fase 0.1
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. Última CI remota: 0.2.1; las secciones anteriores por versión son históricas.
+> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -55,4 +55,4 @@ Ejecutadas localmente 48 comprobaciones inline de importación/ZIP/unidades/tran
 
 ## Aceptación local del historial 0.2.2
 
-Release satisfactorio; 22/22 casos de historial, 63/63 de regresión geométrica/importación y 21/21 del paquete con PATH mínimo. Verificados IDs/procedencia, conservación de hermanas y volumen, restauración de selección/plano, ramas, exportación/reimportación, límites reales de 32 pasos y 256 piezas, rechazo transaccional y descarte por presupuesto. Interfaz visible: encadenamiento, Ctrl+Z/Y, rama alternativa y original de referencia. Evidencia y alcance de cancelación en [HISTORY.md](HISTORY.md). Sin nuevas fuentes/fixtures de pruebas ni nueva ejecución CI remota.
+Release satisfactorio; 22/22 casos de historial, 63/63 de regresión geométrica/importación y 21/21 del paquete con PATH mínimo. Verificados IDs/procedencia, conservación de hermanas y volumen, restauración de selección/plano, ramas, exportación/reimportación, límites reales de 32 pasos y 256 piezas, rechazo transaccional y descarte por presupuesto. Interfaz visible: encadenamiento, Ctrl+Z/Y, rama alternativa y original de referencia. Evidencia y alcance de cancelación en [HISTORY.md](HISTORY.md). Sin nuevas fuentes/fixtures de pruebas. Posteriormente CI remota satisfactoria: ejecución 6 sobre 34b0cb7, build/paquete y 21 casos; véase CI.md.

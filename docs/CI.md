@@ -1,6 +1,6 @@
 # CI Windows x64
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. Última CI remota: 0.2.1; las secciones anteriores por versión son históricas.
+> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -98,4 +98,10 @@ Consulta realizada mediante API pública de GitHub; sin extraer credenciales. Ev
 
 ## Incremento 0.2.2 — 2026-11-08
 
-El workflow añade seis casos de historial a los quince existentes: encadenamiento/undo/redo, rama nueva, exportación, recorte de pasos, rechazo por memoria y límite de piezas. Los 21 pasaron localmente sobre el ZIP extraído con PATH mínimo. No se ha enviado este incremento ni ejecutado Actions de 0.2.2; la ejecución 5 de 0.2.1 no acredita este código.
+El workflow añade seis casos de historial a los quince existentes: encadenamiento/undo/redo, rama nueva, exportación, recorte de pasos, rechazo por memoria y límite de piezas. Los 21 pasaron localmente sobre el ZIP extraído con PATH mínimo. Tras autorización del usuario, el código se publicó y la ejecución 6 validó este incremento, según el registro siguiente.
+
+## Publicación y CI 0.2.2 — 2026-11-08 (Colombia)
+
+Código publicado en main como `34b0cb7eb839ca3fd96a3e88a9e4999d2f003bc1`. [Ejecución 6](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42545316348) completada con resultado success en todas las etapas: verificación de dependencias, build/paquete Release x64, 21 casos inline y carga de artefacto. Resultado consultado mediante la API pública de GitHub, sin acceder a credenciales.
+
+[Artefacto windows-x64-6](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42545316348/artifacts/13642754585): 16 109 877 bytes, retención de siete días, no expirado al consultar. Digest del contenedor de Actions: `sha256:03c4fcce16e36b5505ed621587508d8361fcec5c8a28e24ac4a16b7256f1f757`; no equivale al checksum del ZIP interior ni al ZIP local. No se descargó ni verificó de nuevo su contenido fuera del runner. Sin release público, instalador final ni validación en VM limpia. `prueba.stl` permanece intacto y fuera de Git.
