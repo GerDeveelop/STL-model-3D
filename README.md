@@ -2,13 +2,14 @@
 
 Aplicación de escritorio Windows 10/11 x64 para importar STL/3MF, visualizar mallas, cortar por plano y exportar piezas STL.
 
-**Estado al 2026-11-08:** versión de desarrollo 0.2.1 con importación STL/3MF, visor, corte por Manifold 3.5.4 y exportación STL. Verificados tubos/cavidades, coincidencias con caras/aristas, contornos superiores a 4096 vértices y cancelación. 63 casos inline y 15 del paquete satisfactorios localmente. Sigue requiriendo geometría válida y límites de recursos; contratos y evidencia en [MANIFOLD_CUT.md](docs/MANIFOLD_CUT.md). Cambios subidos a main y [CI Windows 0.2.1 satisfactoria](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42503090070) en b1ede31: build, paquete y 15 casos; artefacto windows-x64-5. La fase 0.2 continúa; el instalador final corresponde a 1.0.
+**Estado al 2026-11-08:** versión de desarrollo 0.2.2 con STL/3MF, corte Manifold, cortes encadenados y Deshacer/Rehacer durante la sesión. Release y validaciones locales satisfactorios: 22 casos de historial, 63 de geometría/importación y 21 del paquete. Uso y límites en [HISTORY.md](docs/HISTORY.md). Este incremento permanece local; la última CI remota corresponde a 0.2.1 (b1ede31). La fase 0.2 continúa y el instalador final corresponde a 1.0.
 
 La entrega final acordada es un instalador `.exe` para Windows x64 con las dependencias necesarias, para abrir la aplicación sin instalar Qt, Python ni herramientas de desarrollo manualmente. El ZIP portátil es provisional. Se elimina el segundo PC físico como requisito y se valida la instalación final en una VM Windows limpia.
 
 ## Documentación
 
 - [Instrucciones de trabajo](AGENTS.md).
+- [Cortes encadenados y Deshacer/Rehacer](docs/HISTORY.md).
 - [Documento maestro](docs/MASTER.md).
 - [Motor Manifold: capacidades, límites y evidencia](docs/MANIFOLD_CUT.md).
 - [Fase 0.2: uso, límites y validación](docs/PHASE_02.md).

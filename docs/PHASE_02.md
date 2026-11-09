@@ -1,13 +1,13 @@
 # Fase 0.2 — Importación 3MF, corte por plano y exportación STL
 
-Fecha: 2026-11-08. Alcance aprobado por el usuario: añadir 3MF junto a STL y continuar corte/exportación. Estado vigente 0.2.1: motor sustituido por Manifold 3.5.4, compilado y validado; cavidades y casos coplanares ya están admitidos dentro del contrato de [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Se conservan abajo las evidencias del primer incremento 0.2.0. No equivale a cerrar toda la fase ni a entregar el instalador final.
+Fecha: 2026-11-08. Alcance aprobado por el usuario: añadir 3MF junto a STL y continuar corte/exportación. Estado vigente 0.2.2: cortes encadenados y Deshacer/Rehacer de sesión incorporados según [HISTORY.md](HISTORY.md). Motor Manifold 3.5.4 compilado y validado; cavidades y casos coplanares ya están admitidos dentro del contrato de [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Se conservan abajo las evidencias del primer incremento 0.2.0. No equivale a cerrar toda la fase ni a entregar el instalador final.
 
 ## Uso
 
 1. Abrir **Archivo > Abrir STL / 3MF…**, Ctrl+O o pasar una ruta al ejecutable. También se detecta el formato de los bytes de entrada por `--inspect-stdin` y `--view-stdin`.
 2. Configurar normal X/Y/Z y posición `d` (controles de ±1e12 y ocho decimales). El plano cumple `normal · posición = d`; para un punto P, usar `d = normal · P`. La normal no puede ser nula. Para un corte horizontal usar `(0,0,1)` y la altura Z deseada. Al abrir se centra este plano en Z, dentro del rango de los controles.
 3. Activar **Mostrar plano y normal +**. El contorno amarillo representa el plano; el segmento indica el lado positivo. Se muestra en las mismas coordenadas del modelo, aunque cada pieza se encuadra por separado.
-4. **Cortar original en dos piezas** calcula ambos lados sin modificar la fuente. El selector permite mostrar Original, Parte positiva o Parte negativa. Repetir un corte siempre parte del modelo importado, no de la pieza seleccionada. No hay historial ni cortes encadenados en este incremento.
+4. **Cortar pieza seleccionada** sustituye la pieza activa por ambos lados y conserva las demás. Repetir sobre cualquiera de las piezas activas. Ctrl+Z/Ctrl+Y deshacen/rehacen cortes, selección y plano. El original queda como referencia visible/exportable; detalles y límites en [HISTORY.md](HISTORY.md).
 5. **Exportar pieza visible a STL…** guarda únicamente la selección actual en STL binario. Elegir un destino distinto del origen. Exportar cada lado por separado. STL no conserva unidades, materiales ni colores; al importar 3MF sus coordenadas se convierten a mm.
 
 Importación, corte, preparación y exportación trabajan en QThread. Ctrl+. solicita cancelación cooperativa; un fallo/cancelación de corte conserva el original y el resultado anterior. Guardado mediante QSaveFile sin escritura directa alternativa: solo reemplaza el destino después de completar validación y escritura. Si se solicita cancelar después del commit, el archivo ya puede haberse guardado y la aplicación informa éxito.
@@ -22,7 +22,7 @@ Importación, corte, preparación y exportación trabajan en QThread. Ctrl+. sol
 - Límites: 256 MiB de archivo, 256 MiB descomprimidos declarados, 4096 entradas ZIP, 2 millones de triángulos expandidos, 6 millones de vértices por objeto, 100 000 visitas de objetos y profundidad 64. Se detectan ciclos. No se extrae contenido al disco. ZIP64, cifrado, multivolumen y compresión distinta de stored/deflate se rechazan.
 - Los límites ZIP se revisan antes de descomprimir mediante el directorio central; lib3mf/libzip realizan la lectura posterior. No constituyen una cuota rígida de RAM del proceso. Cancelación de SDK mediante callback y comprobaciones durante expansión; no se promete latencia máxima para cada operación interna del SDK.
 
-## Contrato geométrico vigente 0.2.1
+## Contrato geométrico (motor incorporado en 0.2.1)
 
 El motor actual es Manifold 3.5.4. Admite cavidades/contornos anidados y coincidencias con caras/aristas, sin tope independiente de 4096 vértices. Exige malla cerrada/manifold válida, verifica cierre y volumen y mantiene límites de 2 millones de triángulos/vértices y presupuesto de buffers. Un plano tangente exterior no produce dos piezas de volumen positivo. La cancelación puede demorarse durante el cálculo interno. Contrato, licencia, tolerancias y evidencia nueva en [MANIFOLD_CUT.md](MANIFOLD_CUT.md).
 
@@ -33,6 +33,8 @@ El motor propio del primer incremento se sustituyó; sus restricciones de huecos
 `--inspect ruta.stl|ruta.3mf` y `--inspect-stdin` devuelven JSON con formato, unidades, dimensiones, triángulos, advertencias y volumen firmado. El volumen firmado por sí solo no demuestra cierre ni validez de un modelo importado.
 
 `--cut-stdin nx ny nz d positive|negative` recibe STL/3MF por tubería y devuelve un STL binario por stdout. Repetir para obtener el otro lado. Salida 0: éxito; salida 1: error en stderr. Descartar stdout si el proceso falla. El CLI no guarda archivos ni aplica el guardado atómico de la interfaz.
+
+`--edit-stdin` permite encadenar operaciones de edición por JSON sin escribir archivos; contrato en HISTORY.md.
 
 ## Evidencia histórica del primer incremento 0.2.0
 
@@ -48,4 +50,4 @@ El motor propio del primer incremento se sustituyó; sus restricciones de huecos
 
 ## Trabajo restante de fase 0.2
 
-CI remota de 0.2.1 completada correctamente en el commit b1ede31; evidencia en CI.md. Continúa ampliar la validación con archivos reales y mediciones de rendimiento. No hay reparación universal, certificación completa de ausencia de autointersecciones ni historial/cortes encadenados. Los huecos anidados y casos coplanares del motor anterior ya se abordaron en 0.2.1: no deben volver a presentarse como pendientes generales. Si se exige cancelación con plazo estricto durante el motor, deberá evaluarse un proceso auxiliar. El instalador final y VM Windows limpia permanecen en fase 1.0.
+0.2.2 validada localmente con 22 casos de historial, 63 de regresión y 21 del paquete; pendiente CI remota del incremento. CI remota de 0.2.1 completada correctamente en el commit b1ede31; evidencia en CI.md. Continúa ampliar la validación con archivos reales y mediciones de rendimiento. No hay reparación universal, certificación completa de ausencia de autointersecciones ni guardado persistente de proyectos. Los huecos anidados y casos coplanares del motor anterior ya se abordaron en 0.2.1: no deben volver a presentarse como pendientes generales. Si se exige cancelación con plazo estricto durante el motor, deberá evaluarse un proceso auxiliar. El instalador final y VM Windows limpia permanecen en fase 1.0.

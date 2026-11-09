@@ -1,6 +1,6 @@
 # Configuración Windows
 
-> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. Última CI remota: 0.2.1; las secciones anteriores por versión son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -79,3 +79,7 @@ Antes de compilar, ejecutar `./scripts/bootstrap-lib3mf.ps1`. Descarga explícit
 ## Dependencia de corte 0.2.1: Manifold 3.5.4
 
 Ejecutar `./scripts/bootstrap-manifold.ps1` antes del build, además de los bootstraps Qt y lib3mf. Fuente fijada por commit y SHA-256; instalación y contraste de archivos bajo build/deps, sin variables de entorno adicionales ni cambios del sistema. CMake compila Manifold estático con pruebas/bindings/descargas implícitas/CrossSection/TBB desactivados. No instalar Python, CGAL o Clipper2. El mismo preset y scripts de build se mantienen. Origen y configuración completa en MANIFOLD_CUT.md.
+
+## Incremento 0.2.2 — 2026-11-08
+
+Sin cambios de dependencias: Qt 6.8.3, lib3mf 2.5.0 y Manifold 3.5.4. Mismos scripts/preset; EditHistory se compila en stlcut_core y la versión de CMake pasa a 0.2.2. Build y paquete locales satisfactorios; logs en HISTORY.md.

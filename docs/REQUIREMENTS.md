@@ -1,6 +1,6 @@
 # Requisitos de fase 0.1
 
-> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. Última CI remota: 0.2.1; las secciones anteriores por versión son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -61,5 +61,7 @@ No se requieren API keys ni endpoints externos para importar y visualizar STL lo
 | F09 | Plano por normal y posición, con previsualización | Plano coherente con coordenadas del original y piezas |
 | F10 | Dos piezas cerradas para geometría admitida | Aristas orientadas, volumen conservado y errores explícitos para casos fuera del contrato |
 | F11 | Exportar pieza seleccionada a STL binario | Reimportar bytes antes de guardar, verificar precisión/conteo/volumen y conservar fuente |
+| F12 | Cortes encadenados y procedencia | Sustituir solo la pieza seleccionada, conservar hermanas y original de referencia; IDs estables |
+| F13 | Deshacer/Rehacer durante la sesión | Restaurar piezas, selección y plano; corte nuevo descarta Rehacer; fallo/cancelación conserva historial; 32 pasos, 256 piezas, 1 GiB contabilizado según HISTORY.md |
 
-El motor vigente 0.2.1 admite contornos con huecos y casos coplanares comprobados mediante Manifold 3.5.4. Se mantiene la exigencia de geometría válida y límites de recursos, sin tope independiente de 4096 vértices; véase MANIFOLD_CUT.md. No se promete reparar mallas ni conservar colores/configuración del laminador. Véase PHASE_02.md.
+El motor vigente desde 0.2.1 admite contornos con huecos y casos coplanares comprobados mediante Manifold 3.5.4. Se mantiene la exigencia de geometría válida y límites de recursos, sin tope independiente de 4096 vértices; véase MANIFOLD_CUT.md. No se promete reparar mallas ni conservar colores/configuración del laminador. Véase PHASE_02.md.

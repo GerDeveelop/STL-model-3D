@@ -27,6 +27,8 @@ Este repositorio especifica una aplicación nativa Windows para cortar, editar, 
 ## Primera instrucción
 Alcance vigente autorizado el 2026-11-08: continuar fase 0.2 e incorporar importación 3MF junto a STL, corte por plano y exportación STL. La instrucción inicial de limitarse a 0.1 queda sustituida por esta autorización. No comenzar IA, conectores ni instalador final en este incremento. Ampliación aprobada: Manifold 3.5.4 para sustituir el corte, admitir cavidades/casos coplanares y retirar el tope de 4096 vértices de contorno, conservando validaciones y límites de recursos; véase docs/MANIFOLD_CUT.md.
 
+Ampliación aprobada 0.2.2: cortes encadenados sobre piezas activas, procedencia/selección, Deshacer/Rehacer y presupuesto de historial compartido durante la sesión; validación inline y documentación en docs/HISTORY.md. Sin formato de proyecto persistente ni nuevas dependencias.
+
 ## Documentación y autorización
 - Leer también docs/REQUIREMENTS.md, docs/ARCHITECTURE.md y docs/TEST_PLAN.md antes de implementar.
 - Documentar por desarrollo requisitos, versiones, librerías, frameworks, configuración y resultados de pruebas.

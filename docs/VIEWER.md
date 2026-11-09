@@ -1,6 +1,6 @@
 # Visor 3D — fase 0.1
 
-> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. Última CI remota: 0.2.1; las secciones anteriores por versión son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -64,4 +64,8 @@ El visor acepta el adaptador de cualquier malla STL/3MF. Mostrar plano y normal 
 
 ## Revisión visible del motor 0.2.1
 
-En el paquete actual se observaron ambas piezas de un tubo cuadrado, con hueco pasante conservado y nueva superficie de corte anular visible en el lado negativo. Cada parte: 4×4×1, 32 triángulos y volumen 12, original 24. Un plano tangente conservó la pieza anterior con aviso correcto. Cancelación por Ctrl+. sobre 1 929 612 triángulos comprobada. No se implementaron nuevos controles de cámara ni historial de cortes. Evidencia en MANIFOLD_CUT.md.
+En el paquete actual se observaron ambas piezas de un tubo cuadrado, con hueco pasante conservado y nueva superficie de corte anular visible en el lado negativo. Cada parte: 4×4×1, 32 triángulos y volumen 12, original 24. Un plano tangente conservó la pieza anterior con aviso correcto. Cancelación por Ctrl+. sobre 1 929 612 triángulos comprobada. En aquel incremento no se implementaron nuevos controles de cámara ni historial de cortes. Evidencia en MANIFOLD_CUT.md.
+
+## Historial visible 0.2.2
+
+Selector de piezas activas con IDs y procedencia, original de referencia, botones Deshacer/Rehacer y uso del presupuesto. Al restaurar un estado se recuperan selección y plano, y se encuadra la pieza; la cámara no se guarda en el historial. Cortes sucesivos, ramas y atajos verificados en ventana visible; evidencia en HISTORY.md.

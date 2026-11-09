@@ -1,6 +1,6 @@
 # Arquitectura y decisiones
 
-> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. Última CI remota: 0.2.1; las secciones anteriores por versión son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -52,8 +52,12 @@ Se trabaja con un equipo de desarrollo y CI; el segundo PC físico deja de ser r
 
 ## Arquitectura del incremento 0.2
 
-`core/io/MeshReader` detecta STL/ZIP 3MF y adapta lib3mf 2.5.0 a Mesh; `core/cutting/PlaneCut` calcula y verifica ambos lados; `core/io/StlWriter` serializa STL binario. Mesh incorpora unidades y advertencias. El núcleo sigue sin Qt. La UI conserva original y dos resultados, prepara sus copias de renderizado en el trabajador y guarda con QSaveFile tras reimportar bytes. El adaptador del visor guarda centro/escala para transformar correctamente el plano sin alterar la geometría. Contratos y límites en PHASE_02.md.
+`core/io/MeshReader` detecta STL/ZIP 3MF y adapta lib3mf 2.5.0 a Mesh; `core/cutting/PlaneCut` calcula y verifica ambos lados; `core/io/StlWriter` serializa STL binario. Mesh incorpora unidades y advertencias. El núcleo sigue sin Qt. Desde 0.2.2 la UI conserva un EditHistory de piezas inmutables compartidas, el original de referencia y una caché ViewMesh por ID. El trabajador prepara ambas piezas; el historial/caché candidatos se publican solo tras verificar límites. Se guarda con QSaveFile tras reimportar bytes. El adaptador del visor guarda centro/escala para transformar correctamente el plano sin alterar la geometría. Contratos y límites en PHASE_02.md.
 
 ## Adaptador de corte 0.2.1
 
 PlaneCut conserva su API. Indexa/verifica la malla, normaliza coordenadas, usa MeshGL64 y SplitByPlane, consolida resultados coplanares y valida volumen/cierre antes de entregarlos a la UI. El núcleo continúa independiente de Qt. ExecutionContext recibe cancelación de stop_token; las operaciones internas inmediatas se comprueban al regresar. No hay subproceso auxiliar ni cuota rígida de RAM. Detalles de buffers, versión y licencia en MANIFOLD_CUT.md.
+
+## Historial de sesión 0.2.2
+
+`core/projects/EditHistory` es independiente de Qt: estados con piezas activas, selección y plano. Mallas/vistas compartidas evitan duplicar geometría entre pasos. Recorta los estados más antiguos dentro de 32 cortes y 1 GiB contabilizado; máximo 256 piezas activas. Rechazar un estado que no cabe conserva también Rehacer. El original permanece fijado. No se persiste la sesión ni se incluye la cámara en el historial. Contrato completo y CLI de edición en [HISTORY.md](HISTORY.md).

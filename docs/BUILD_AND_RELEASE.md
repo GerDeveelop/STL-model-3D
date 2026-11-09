@@ -1,6 +1,6 @@
 # Compilación y paquete portátil Windows
 
-> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. Última CI remota: 0.2.1; las secciones anteriores por versión son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -106,3 +106,7 @@ Ejecutar bootstrap-lib3mf.ps1 antes del build/empaquetado. CMake instala tambi?n
 ## Paquete provisional 0.2.1 con Manifold
 
 Ejecutar bootstrap-manifold.ps1 antes del build. El motor está enlazado estáticamente; CMake instala solo LICENSE/AUTHORS originales en licenses/manifold-3.5.4 y excluye la instalación de headers/bibliotecas de desarrollo del subproyecto. Manifiesto con manifold_version=3.5.4 y manifold_linkage=static. Paquete actual verificado localmente: 74 archivos más manifiesto, 15 casos de importación/corte/reimportación con PATH mínimo y revisión visible/cancelación. Hash y limitaciones en MANIFOLD_CUT.md. Es un ZIP provisional; no se implementó instalador ni se publicó release.
+
+## Incremento 0.2.2 — 2026-11-08
+
+Release 0.2.2 y ZIP provisional comprobados localmente; inventario exacto de 74 archivos más manifiesto y 21 casos satisfactorios con PATH mínimo. SHA-256 y ruta en HISTORY.md. El texto del paquete explica el historial de sesión y sus límites. No es instalador final ni entrega verificada en VM limpia.

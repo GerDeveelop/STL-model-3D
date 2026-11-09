@@ -51,4 +51,6 @@ El workflow incorpora la adquisición verificada de Manifold y esas cinco acepta
 
 ## Límites que siguen vigentes
 
-No hay reparación universal, certificación completa de ausencia de autointersecciones, unión booleana automática de instancias 3MF solapadas, historial/cortes encadenados ni exportación 3MF. Se conservan los avisos de materiales/colores y unidades de STL. El instalador final `.exe` y su validación en VM Windows limpia continúan en fase 1.0.
+No hay reparación universal, certificación completa de ausencia de autointersecciones, unión booleana automática de instancias 3MF solapadas, guardado persistente de proyectos ni exportación 3MF. Se conservan los avisos de materiales/colores y unidades de STL. El instalador final `.exe` y su validación en VM Windows limpia continúan en fase 1.0.
+
+Desde 0.2.2 hay cortes encadenados e historial de sesión sin cambiar este contrato geométrico; véase [HISTORY.md](HISTORY.md).

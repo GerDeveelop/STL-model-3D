@@ -114,6 +114,9 @@ Extraiga TODO el ZIP y abra STLCutStudioAI.exe. No copie el exe aislado.
 No requiere el kit Qt en PATH; incluye sus DLL/plugins y runtime MSVC local.
 Requiere Windows 10/11 x64 y controlador OpenGL 3.3 compatible para el visor.
 Incluye importación STL/3MF, corte por plano con límites documentados y exportación STL.
+Permite cortar piezas resultantes y Deshacer/Rehacer (Ctrl+Z/Ctrl+Y) durante la sesión.
+Historial: hasta 32 pasos y 256 piezas, presupuesto de 1 GiB de geometría/vistas;
+puede retirar pasos antiguos y lo informa. No guarda proyectos/historial al cerrar.
 No incluye IA, instalador final, actualizador ni firma digital.
 STL no define unidades. La apertura no modifica el archivo fuente.
 

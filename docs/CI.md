@@ -1,6 +1,6 @@
 # CI Windows x64
 
-> Estado vigente 0.2.1: Manifold 3.5.4 sustituye el motor propio; cavidades/casos coplanares y contornos >4096 comprobados. Contrato y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Las secciones fechadas anteriores son históricas.
+> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. Última CI remota: 0.2.1; las secciones anteriores por versión son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -95,3 +95,7 @@ Usuario autorizó commit/push. Código y workflow subidos a main en `b1ede31a1a5
 ZIP interior: `STLCutStudioAI-0.2.1-portable-win-x64-20261108T170540075Z.zip`; SHA-256 `cee55363fc29221650e93b3d808d1ad5d603559114d6a77a9dc18eee2f5b2393`. No confundir con el ZIP local, cuyo build usa otro toolchain/timestamp. No es un release público ni el instalador final.
 
 Consulta realizada mediante API pública de GitHub; sin extraer credenciales. Evidencia local ignorada por Git: build/ci-021-run.json, ci-021-jobs.json, ci-021-annotations.json y ci-021-artifacts.json. La actualización documental posterior no modifica el código verificado ni dispara otro build por el filtro del workflow.
+
+## Incremento 0.2.2 — 2026-11-08
+
+El workflow añade seis casos de historial a los quince existentes: encadenamiento/undo/redo, rama nueva, exportación, recorte de pasos, rechazo por memoria y límite de piezas. Los 21 pasaron localmente sobre el ZIP extraído con PATH mínimo. No se ha enviado este incremento ni ejecutado Actions de 0.2.2; la ejecución 5 de 0.2.1 no acredita este código.

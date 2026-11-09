@@ -95,7 +95,7 @@ jobs:
       - name: Verify ZIP and import data in memory
         run: |
           @'
-          import hashlib, io, json, math, os, pathlib, struct, subprocess, zipfile
+          import base64, hashlib, io, json, math, os, pathlib, struct, subprocess, zipfile
           root = pathlib.Path.cwd()
           archives = sorted((root / 'build/packages').glob('*/*.zip'))
           assert len(archives) == 1, 'Expected one ZIP'
@@ -220,6 +220,41 @@ jobs:
               original=subprocess.run([str(exe),'--inspect-stdin'],input=data,capture_output=True,env=env,timeout=20)
               assert math.isclose(sum(volumes),json.loads(original.stdout)['signed_volume'],rel_tol=1e-5),name
               outcomes.append({'case':name,'passed':True,'volumes':volumes})
+          def edit(commands,limits=None,valid=True):
+              request={'commands':commands}
+              if limits is not None: request['limits']=limits
+              process=subprocess.run([str(exe),'--edit-stdin',json.dumps(request,separators=(',',':'))],input=binary,capture_output=True,env=env,timeout=30)
+              result=json.loads(process.stdout)
+              assert result['ok'] == valid and process.returncode == (0 if valid else 1),result
+              return result
+          first={'op':'cut','piece':1,'normal':[0,0,1],'offset':15}
+          second={'op':'cut','piece':2,'normal':[1,0,0],'offset':5,'visible':False}
+          restored=edit([first,second,{'op':'undo'},{'op':'redo'}])
+          assert [p['id'] for p in restored['states'][3]['pieces']] == [2,3]
+          assert restored['states'][3]['selected'] == 2 and restored['states'][3]['redo'] == 1
+          assert restored['states'][3]['plane_normal'] == [1,0,0] and not restored['states'][3]['plane_visible']
+          for key in ('pieces','selected','plane_normal','plane_offset','plane_visible'):
+              assert restored['states'][2][key] == restored['states'][4][key],key
+          assert math.isclose(sum(p['signed_volume'] for p in restored['current']['pieces']),6000,rel_tol=1e-7)
+          outcomes.append({'case':'history-chained-cuts-undo-redo','passed':True})
+          branch=edit([first,second,{'op':'undo'},{'op':'cut','piece':3,'normal':[0,1,0],'offset':10},{'op':'redo'}])
+          assert [p['id'] for p in branch['current']['pieces']] == [2,6,7] and branch['current']['redo'] == 0
+          outcomes.append({'case':'history-new-branch-discards-redo','passed':True})
+          exported=edit([first,second,*({'op':'export','piece':i} for i in (4,5,3,1))])
+          for item,volume in zip(exported['exports'],(1500,1500,3000,6000)):
+              p=subprocess.run([str(exe),'--inspect-stdin'],input=base64.b64decode(item['stl_base64']),capture_output=True,env=env,timeout=20)
+              assert p.returncode == 0 and math.isclose(json.loads(p.stdout)['signed_volume'],volume,rel_tol=1e-6)
+          outcomes.append({'case':'history-export-active-pieces-and-original','passed':True})
+          limited=edit([first,second,{'op':'cut','piece':3,'normal':[0,1,0],'offset':10},{'op':'undo'},{'op':'undo'}],{'steps':1})
+          assert [p['id'] for p in limited['current']['pieces']] == [4,5,3] and limited['current']['undo'] == 0 and limited['current']['redo'] == 1
+          outcomes.append({'case':'history-step-budget-eviction','passed':True})
+          initial=edit([])['current']['retained_bytes']
+          rejected=edit([first],{'bytes':initial+80},False)
+          assert [p['id'] for p in rejected['current']['pieces']] == [1] and rejected['current']['undo'] == 0
+          outcomes.append({'case':'history-memory-budget-transaction','passed':True})
+          limited=edit([first,second],{'pieces':2},False)
+          assert [p['id'] for p in limited['current']['pieces']] == [2,3] and limited['current']['undo'] == 1
+          outcomes.append({'case':'history-active-piece-limit','passed':True})
           report = {'archive': archive.name, 'sha256': digest, 'manifest_files': len(manifest['files']),
                     'cases': outcomes, 'path': env['PATH'], 'gui_tested': False, 'clean_windows_tested': False}
           (root / 'build/ci-verification.json').write_text(json.dumps(report,indent=2),encoding='utf8')

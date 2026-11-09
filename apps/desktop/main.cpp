@@ -2,6 +2,7 @@
 #include "core/io/MeshReader.h"
 #include "core/io/StlWriter.h"
 #include "core/cutting/PlaneCut.h"
+#include "core/projects/EditHistory.h"
 #include "MeshView.h"
 
 #include <QAction>
@@ -19,6 +20,7 @@
 #include <QFormLayout>
 #include <QSaveFile>
 #include <QShortcut>
+#include <QSignalBlocker>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -50,6 +52,7 @@
 #include <memory>
 #include <sstream>
 #include <stop_token>
+#include <map>
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -115,6 +118,91 @@ QJsonObject summary(const stlcut::Mesh& mesh)
             {"signed_volume", stlcut::signedVolume(mesh)}, {"warnings",warnings}};
 }
 
+QJsonObject historyJson(const stlcut::EditHistory& history)
+{
+    const auto& s=history.state();
+    QJsonArray pieces;
+    for(const auto& p:s.pieces) {
+        auto item=summary(*p->mesh);
+        item.insert("id",static_cast<qint64>(p->id));
+        item.insert("parent_id",static_cast<qint64>(p->parentId));
+        item.insert("name",QString::fromStdString(p->name));pieces.append(item);
+    }
+    return {{"pieces",pieces},{"selected",static_cast<qint64>(s.selected)},
+            {"plane_normal",vectorJson(s.plane.normal)},{"plane_offset",s.plane.offset},{"plane_visible",s.planeVisible},
+            {"undo",static_cast<qint64>(history.undoCount())},{"redo",static_cast<qint64>(history.redoCount())},
+            {"retained_bytes",static_cast<qint64>(history.retainedBytes())}};
+}
+
+// Production headless editing: model bytes on stdin, bounded JSON command list
+// in the argument. Uses the same history, cutter and serializer as the window.
+int editSession(const QString& text)
+{
+    QJsonObject result;QJsonArray states,exports;
+    std::uint64_t exportBytes=0;
+    std::unique_ptr<stlcut::EditHistory> history;
+    int code=0;
+    try {
+        QJsonParseError error;
+        const auto document=QJsonDocument::fromJson(text.toUtf8(),&error);
+        if(error.error!=QJsonParseError::NoError||!document.isObject())throw std::runtime_error("Se requiere un objeto JSON de edicion.");
+        const auto request=document.object();
+        auto integer=[](const QJsonValue& value)->std::uint64_t {
+            const auto n=value.toDouble(-1);
+            if(!std::isfinite(n)||n<0||n>9007199254740991.0||std::floor(n)!=n)throw std::runtime_error("Entero JSON invalido.");
+            return static_cast<std::uint64_t>(n);
+        };
+        stlcut::HistoryLimits limits;
+        if(request.contains("limits")) {
+            if(!request.value("limits").isObject())throw std::runtime_error("Limites JSON invalidos.");
+            const auto l=request.value("limits").toObject();
+            if(l.contains("bytes"))limits.bytes=integer(l.value("bytes"));
+            if(l.contains("steps"))limits.cuts=static_cast<size_t>(integer(l.value("steps")));
+            if(l.contains("pieces"))limits.pieces=static_cast<size_t>(integer(l.value("pieces")));
+        }
+        history=std::make_unique<stlcut::EditHistory>(limits);
+        history->reset(std::make_shared<const stlcut::Mesh>(readStdin()),"Original");
+        if(!request.value("commands").isArray())throw std::runtime_error("Falta la lista commands.");
+        const auto commands=request.value("commands").toArray();
+        if(commands.size()>256)throw std::runtime_error("Maximo 256 comandos por llamada.");
+        states.append(historyJson(*history));
+        for(const auto& value:commands) {
+            if(!value.isObject())throw std::runtime_error("Comando JSON invalido.");
+            const auto command=value.toObject();const auto op=command.value("op").toString();
+            if(command.contains("piece"))history->select(integer(command.value("piece")));
+            if(op=="plane"||op=="cut") {
+                const auto normal=command.value("normal").toArray();
+                if(normal.size()!=3||!command.value("offset").isDouble())throw std::runtime_error("Plano JSON invalido.");
+                for(const auto& n:normal)if(!n.isDouble())throw std::runtime_error("Normal JSON invalida.");
+                history->setPlane({{normal[0].toDouble(),normal[1].toDouble(),normal[2].toDouble()},command.value("offset").toDouble()},command.value("visible").toBool(true));
+                if(op=="cut") {
+                    if(!history->selectedIsActive())throw std::runtime_error("Seleccione una pieza activa.");
+                    auto cut=stlcut::cutByPlane(*history->selected()->mesh,history->state().plane);
+                    const auto commit=history->commitCut(std::make_shared<const stlcut::Mesh>(std::move(cut.positive)),
+                                                         std::make_shared<const stlcut::Mesh>(std::move(cut.negative)));
+                    result.insert("discarded_steps",static_cast<qint64>(commit.discardedSteps));
+                }
+            } else if(op=="undo") {history->undo();}
+            else if(op=="redo") {history->redo();}
+            else if(op=="export") {
+                const auto bytesNeeded=84+history->selected()->mesh->triangles.size()*50;
+                if(bytesNeeded>stlcut::maxFileBytes-exportBytes)throw std::runtime_error("Exportaciones JSON superan 256 MiB de STL en una llamada.");
+                exportBytes+=bytesNeeded;
+                std::ostringstream out(std::ios::binary);stlcut::writeStl(out,*history->selected()->mesh);
+                const auto bytes=out.str();
+                exports.append(QJsonObject{{"piece",static_cast<qint64>(history->state().selected)},
+                    {"stl_base64",QString::fromLatin1(QByteArray(bytes.data(),static_cast<qsizetype>(bytes.size())).toBase64())}});
+            } else if(op!="select"&&op!="status")throw std::runtime_error("Operacion de edicion desconocida.");
+            states.append(historyJson(*history));
+        }
+        result.insert("ok",true);
+    } catch(const std::exception& e) {result.insert("ok",false);result.insert("error",QString::fromUtf8(e.what()));code=1;}
+    if(history&&!history->empty())result.insert("current",historyJson(*history));
+    result.insert("states",states);result.insert("exports",exports);
+    std::cout<<QJsonDocument(result).toJson(QJsonDocument::Compact).constData()<<'\n';
+    return code;
+}
+
 // Useful for local automation: same production reader, JSON over redirected stdout.
 // No GUI, no source-file changes and no auxiliary files are required.
 int inspect(int argc, char* argv[])
@@ -125,6 +213,7 @@ int inspect(int argc, char* argv[])
     try {
         stlcut::Mesh mesh;
         const auto args = app.arguments();
+        if(args.size()==3&&args[1]==QStringLiteral("--edit-stdin"))return editSession(args[2]);
         if (args.size() == 2 && args[1] == QStringLiteral("--inspect-stdin")) {
             mesh = readStdin();
         } else if (args.size() == 3 && args[1] == QStringLiteral("--inspect")) {
@@ -237,14 +326,16 @@ public:
         preview_=new QCheckBox(QStringLiteral("Mostrar plano y normal +"),cutting);
         preview_->setChecked(true);form->addRow(preview_);
         connect(preview_,&QCheckBox::toggled,this,[this]{updatePlane();});
-        auto* cutButton=new QPushButton(QStringLiteral("Cortar original en dos piezas"),cutting);
-        form->addRow(cutButton);connect(cutButton,&QPushButton::clicked,this,[this]{startCut();});
+        cutButton_=new QPushButton(QStringLiteral("Cortar pieza seleccionada"),cutting);
+        form->addRow(cutButton_);connect(cutButton_,&QPushButton::clicked,this,[this]{startCut();});
         pieces_=new QComboBox(cutting);
-        pieces_->addItems({QStringLiteral("Original"),QStringLiteral("Parte positiva (+)"),QStringLiteral("Parte negativa (−)")});
+        pieces_->setObjectName(QStringLiteral("pieceSelection"));
         form->addRow(QStringLiteral("Mostrar / exportar"),pieces_);
         connect(pieces_,qOverload<int>(&QComboBox::currentIndexChanged),this,[this](int){selectPiece();});
         auto* exportButton=new QPushButton(QStringLiteral("Exportar pieza visible a STL…"),cutting);
         form->addRow(exportButton);connect(exportButton,&QPushButton::clicked,this,[this]{exportPiece();});
+        historyStatus_=new QLabel(cutting);historyStatus_->setWordWrap(true);historyStatus_->setObjectName(QStringLiteral("historyStatus"));
+        form->addRow(historyStatus_);
         cutting->setEnabled(false);layout->addWidget(cutting);
         layout->addStretch();
         layout->addWidget(progress_);
@@ -279,9 +370,16 @@ public:
         auto* quit = fileMenu->addAction(QStringLiteral("&Salir"));
         quit->setShortcut(QKeySequence::Quit);
         connect(quit, &QAction::triggered, this, &QMainWindow::close);
+        auto* editMenu=menuBar()->addMenu(QStringLiteral("&Editar"));
+        undo_=editMenu->addAction(QStringLiteral("Deshacer corte"));undo_->setShortcut(QKeySequence(QStringLiteral("Ctrl+Z")));
+        redo_=editMenu->addAction(QStringLiteral("Rehacer corte"));redo_->setShortcut(QKeySequence(QStringLiteral("Ctrl+Y")));
+        connect(undo_,&QAction::triggered,this,[this]{restoreHistory(false);});
+        connect(redo_,&QAction::triggered,this,[this]{restoreHistory(true);});
+        undo_->setEnabled(false);redo_->setEnabled(false);
         auto* viewMenu=menuBar()->addMenu(QStringLiteral("&Vista"));
         auto* toolbar=addToolBar(QStringLiteral("Vista"));
         toolbar->setMovable(false);
+        toolbar->addAction(undo_);toolbar->addAction(redo_);toolbar->addSeparator();
         auto* fit=viewMenu->addAction(QStringLiteral("Encuadrar"));
         fit->setShortcut(QKeySequence(Qt::Key_F));
         connect(fit,&QAction::triggered,view_,&MeshView::fitMesh);
@@ -371,6 +469,7 @@ public:
         worker_->setParent(this);
         open_->setEnabled(false);
         cutControls_->setEnabled(false);
+        updateHistoryActions();
         cancel_->setText(QStringLiteral("Cancelar importación (Ctrl+.)"));
         cancel_->setEnabled(true);
         cancel_->show();
@@ -392,73 +491,108 @@ public:
                     {"request_phase",job->cancelRequestPhase},
                     {"worker_phase",QString::fromLatin1(phaseName(job->phase.load()))},
                     {"latency_ms",job->cancelTimer.isValid() ? static_cast<double>(job->cancelTimer.nsecsElapsed())/1e6 : -1},
-                    {"retained_triangles",mesh_ ? static_cast<qint64>(mesh_->triangles.size()) : 0}
+                    {"retained_triangles",selectedMesh() ? static_cast<qint64>(selectedMesh()->triangles.size()) : 0}
                 }).toJson(QJsonDocument::Compact);
             } else if (!job->error.isEmpty()) {
                 outcome_->setText(QStringLiteral("No se pudo importar: %1\nSe conserva el modelo anterior.")
                                       .arg(job->error));
                 qInfo().noquote() << "STL_IMPORT_ERROR_METRIC retained_triangles="
-                                  << (mesh_ ? mesh_->triangles.size() : 0);
+                                  << (selectedMesh() ? selectedMesh()->triangles.size() : 0);
             } else {
                 qInfo().noquote() << "STL_IMPORT_METRIC" << QJsonDocument(QJsonObject{
                     {"triangles",static_cast<qint64>(job->mesh->triangles.size())},
                     {"input_ms",job->inputMs},{"presentation_ms",job->presentationMs},
                     {"presentation_bytes",static_cast<qint64>(job->view->vertices.size()*sizeof(ViewVertex))}
                 }).toJson(QJsonDocument::Compact);
-                mesh_ = std::move(job->mesh);
-                sourcePath_=path;
-                cutResult_.reset();
-                originalView_=std::move(job->view);
-                pieces_->setCurrentIndex(0);
-                view_->setMesh(originalView_);
-                const auto centerZ=std::midpoint(mesh_->bounds.min.z,mesh_->bounds.max.z);
-                planeInputs_[0]->setValue(0);planeInputs_[1]->setValue(0);planeInputs_[2]->setValue(1);
-                planeInputs_[3]->setValue(centerZ);
-                updatePlane();
-                const auto& mesh = *mesh_;
-                info_->setText(QStringLiteral("Archivo: %1\nFormato: %2\nTriángulos: %3\n"
-                                              "Dimensiones: %4\nCaja mínima: %5\nCaja máxima: %6\n\n"
-                                              "Unidades: %7 (3MF convertido a mm; STL sin unidad definida).")
-                                   .arg(path, QString::fromStdString(mesh.format))
-                                   .arg(static_cast<qulonglong>(mesh.triangles.size()))
-                                   .arg(vectorText(mesh.bounds.dimensions()), vectorText(mesh.bounds.min),
-                                        vectorText(mesh.bounds.max)).arg(QString::fromStdString(mesh.units)));
-                outcome_->setText(QStringLiteral("Importación completada. Triángulos degenerados: %1.\n"
-                                                 "Se conservan todos los triángulos. No se verificó cierre, "
-                                                 "conectividad ni autointersecciones. Normales de archivo ignoradas.")
-                                      .arg(static_cast<qulonglong>(mesh.degenerateTriangles)));
-                for(const auto& warning:mesh.warnings)outcome_->setText(outcome_->text()+"\n"+QString::fromStdString(warning));
+                try {
+                    auto next=history_;
+                    next.reset(job->mesh,QFileInfo(path).fileName().toStdString(),viewBytes(*job->view));
+                    std::map<stlcut::PieceId,std::shared_ptr<const ViewMesh>> views{{next.original()->id,job->view}};
+                    history_=std::move(next);pieceViews_.swap(views);sourcePath_=path;
+                    refreshScene();
+                    outcome_->setText(QStringLiteral("Importación completada. Triángulos degenerados: %1.\nEl historial anterior se reinició. No se comprobó cierre ni ausencia de autointersecciones.")
+                        .arg(static_cast<qulonglong>(history_.original()->mesh->degenerateTriangles)));
+                    for(const auto& warning:history_.original()->mesh->warnings)outcome_->setText(outcome_->text()+"\n"+QString::fromStdString(warning));
+                }catch(const std::exception& e) {
+                    outcome_->setText(QStringLiteral("No se pudo adoptar el modelo: %1. Se conserva la sesión anterior.").arg(QString::fromUtf8(e.what())));
+                }
             }
-            statusBar()->showMessage(mesh_ ? QStringLiteral("Modelo cargado · Unidades: %1").arg(QString::fromStdString(mesh_->units))
-                                          : QStringLiteral("Sin modelo cargado"));
+            statusBar()->showMessage(history_.empty() ? QStringLiteral("Sin modelo cargado") : QStringLiteral("Sesión con %1 piezas activas").arg(history_.state().pieces.size()));
             job_.reset();
-            cutControls_->setEnabled(bool(mesh_));
+            updateHistoryActions();
         });
         worker_->start();
     }
 private:
     stlcut::Plane plane() const {return {{planeInputs_[0]->value(),planeInputs_[1]->value(),planeInputs_[2]->value()},planeInputs_[3]->value()};}
-    void updatePlane() {if(view_)view_->setCutPlane(plane(),preview_->isChecked());}
+    void updatePlane() {
+        if(!history_.empty())history_.setPlane(plane(),preview_->isChecked());
+        if(view_)view_->setCutPlane(plane(),preview_->isChecked());
+    }
+    static std::uint64_t viewBytes(const ViewMesh& view) {
+        return sizeof(ViewMesh)+view.vertices.capacity()*sizeof(ViewVertex);
+    }
     const stlcut::Mesh* selectedMesh() const {
-        if(cutResult_&&pieces_->currentIndex()==1)return &cutResult_->positive;
-        if(cutResult_&&pieces_->currentIndex()==2)return &cutResult_->negative;
-        return mesh_.get();
+        return history_.empty() ? nullptr:history_.selected()->mesh.get();
+    }
+    void updateHistoryActions() {
+        const bool available=!worker_&&!history_.empty();
+        cutControls_->setEnabled(available);
+        cutButton_->setEnabled(available&&history_.selectedIsActive());
+        undo_->setEnabled(available&&history_.undoCount()>0);
+        redo_->setEnabled(available&&history_.redoCount()>0);
+        if(available)statusBar()->showMessage(history_.state().pieces.size()==1 ? QStringLiteral("Sesión con 1 pieza activa"):
+            QStringLiteral("Sesión con %1 piezas activas").arg(history_.state().pieces.size()));
+        if(!history_.empty())historyStatus_->setText(QStringLiteral("%1 piezas activas · Deshacer: %2 · Rehacer: %3\nHistorial: %4 MiB / 1024 MiB · máximo 32 pasos y 256 piezas")
+            .arg(history_.state().pieces.size()).arg(history_.undoCount()).arg(history_.redoCount())
+            .arg(history_.retainedBytes()/1048576.0,0,'f',2));
+    }
+    void showSelectedPiece() {
+        if(history_.empty())return;
+        const auto piece=history_.selected();const auto& mesh=*piece->mesh;
+        view_->setMesh(pieceViews_.at(piece->id));
+        auto text=QStringLiteral("Pieza: %1 [#%2]\nOrigen: %3\nFormato: %4\nTriángulos: %5\nDimensiones: %6\nCaja mínima: %7\nCaja máxima: %8\nUnidades: %9")
+            .arg(QString::fromStdString(piece->name)).arg(piece->id)
+            .arg(piece->parentId ? QString::fromStdString(piece->parentName):QStringLiteral("Archivo importado"))
+            .arg(QString::fromStdString(mesh.format))
+            .arg(static_cast<qulonglong>(mesh.triangles.size())).arg(vectorText(mesh.bounds.dimensions()),vectorText(mesh.bounds.min),vectorText(mesh.bounds.max),QString::fromStdString(mesh.units));
+        if(!history_.selectedIsActive())text+=QStringLiteral("\nOriginal de referencia: seleccione una pieza activa para cortar.");
+        info_->setText(text);
+        view_->setCutPlane(plane(),preview_->isChecked());
+    }
+    void refreshScene() {
+        if(history_.empty())return;
+        const QSignalBlocker blockPieces(pieces_),bx(planeInputs_[0]),by(planeInputs_[1]),bz(planeInputs_[2]),bd(planeInputs_[3]),bp(preview_);
+        pieces_->clear();
+        const auto& state=history_.state();
+        const auto root=history_.original();
+        const bool rootActive=std::any_of(state.pieces.begin(),state.pieces.end(),[&](const auto& p){return p->id==root->id;});
+        if(!rootActive)pieces_->addItem(QStringLiteral("Original (referencia)"),QVariant::fromValue<qulonglong>(root->id));
+        for(const auto& p:state.pieces)pieces_->addItem(QString::fromStdString(p->name)+QStringLiteral(" · #%1").arg(p->id),QVariant::fromValue<qulonglong>(p->id));
+        pieces_->setCurrentIndex(pieces_->findData(QVariant::fromValue<qulonglong>(state.selected)));
+        planeInputs_[0]->setValue(state.plane.normal.x);planeInputs_[1]->setValue(state.plane.normal.y);
+        planeInputs_[2]->setValue(state.plane.normal.z);planeInputs_[3]->setValue(state.plane.offset);preview_->setChecked(state.planeVisible);
+        // Match any clipping/rounding imposed by the visible spin controls.
+        history_.setPlane(plane(),preview_->isChecked());
+        showSelectedPiece();updateHistoryActions();
     }
     void selectPiece() {
-        if(!mesh_||worker_)return;
-        const auto index=pieces_->currentIndex();
-        if(index&& !cutResult_) {pieces_->setCurrentIndex(0);return;}
-        view_->setMesh(index==0 ? originalView_:index==1 ? positiveView_:negativeView_);
-        const auto* m=selectedMesh();
-        info_->setText(QStringLiteral("%1\nTriángulos: %2\nDimensiones: %3\nUnidades: %4")
-            .arg(pieces_->currentText()).arg(static_cast<qulonglong>(m->triangles.size()))
-            .arg(vectorText(m->bounds.dimensions()),QString::fromStdString(m->units)));
-        updatePlane();
+        if(history_.empty()||worker_||pieces_->currentIndex()<0)return;
+        history_.select(pieces_->currentData().toULongLong());
+        showSelectedPiece();updateHistoryActions();
+    }
+    void restoreHistory(bool redo) {
+        if(worker_||history_.empty())return;
+        if(redo ? history_.redo():history_.undo()) {
+            refreshScene();outcome_->setText(redo ? QStringLiteral("Corte rehecho: piezas, selección y plano recuperados."):
+                QStringLiteral("Corte deshecho: piezas, selección y plano recuperados."));
+        }
     }
     void startCut() {
-        if(worker_||!mesh_)return;
+        if(worker_||history_.empty()||!history_.selectedIsActive())return;
+        history_.setPlane(plane(),preview_->isChecked());
         const auto requestedPlane=plane();
-        const auto source=mesh_;
+        const auto source=history_.selected()->mesh;
         auto result=std::make_shared<stlcut::CutResult>();
         auto views=std::make_shared<std::array<std::shared_ptr<const ViewMesh>,2>>();
         job_=std::make_shared<ImportJob>();const auto job=job_;
@@ -471,7 +605,7 @@ private:
             }catch(const stlcut::ImportCancelled&) {job->cancelled=true;}
             catch(const std::exception& e) {job->error=QString::fromUtf8(e.what());}
         });
-        worker_->setParent(this);open_->setEnabled(false);cutControls_->setEnabled(false);
+        worker_->setParent(this);open_->setEnabled(false);cutControls_->setEnabled(false);updateHistoryActions();
         cancel_->setText(QStringLiteral("Cancelar operación (Ctrl+.)"));cancel_->setEnabled(true);cancel_->show();progress_->show();
         outcome_->setText(QStringLiteral("Cortando y comprobando cierre y conservación de volumen…"));
         connect(worker_,&QThread::finished,this,[this,job,result,views] {
@@ -479,12 +613,22 @@ private:
             if(job->cancelled||job->cancellation.stop_requested())outcome_->setText(QStringLiteral("Corte cancelado. Se conserva el estado anterior."));
             else if(!job->error.isEmpty())outcome_->setText(QStringLiteral("Corte descartado: %1").arg(job->error));
             else {
-                cutResult_=result;positiveView_=(*views)[0];negativeView_=(*views)[1];
-                pieces_->setCurrentIndex(1);selectPiece();
-                outcome_->setText(QStringLiteral("Corte completado. Volumen original: %1; +: %2; −: %3.\nTolerancia espacial: %4. Seleccione cada pieza para exportarla.\nNo se certifica ausencia de autointersecciones de la malla original.")
-                    .arg(result->originalVolume,0,'g',12).arg(result->positiveVolume,0,'g',12).arg(result->negativeVolume,0,'g',12).arg(result->tolerance,0,'g',6));
+                try {
+                    auto next=history_;
+                    const auto commit=next.commitCut(std::make_shared<const stlcut::Mesh>(std::move(result->positive)),
+                        std::make_shared<const stlcut::Mesh>(std::move(result->negative)),viewBytes(*(*views)[0]),viewBytes(*(*views)[1]));
+                    auto cache=pieceViews_;cache[commit.positive]=(*views)[0];cache[commit.negative]=(*views)[1];
+                    const auto retained=next.retainedIds();
+                    std::erase_if(cache,[&](const auto& entry){return !std::binary_search(retained.begin(),retained.end(),entry.first);});
+                    history_=std::move(next);pieceViews_.swap(cache);refreshScene();
+                    outcome_->setText(QStringLiteral("Corte completado. Volumen de la pieza: %1; +: %2; −: %3.\nLas demás piezas se conservan. Seleccione otra pieza para continuar o exportar.\nNo se certifica ausencia de autointersecciones del origen.")
+                        .arg(result->originalVolume,0,'g',12).arg(result->positiveVolume,0,'g',12).arg(result->negativeVolume,0,'g',12));
+                    if(commit.discardedSteps)outcome_->setText(outcome_->text()+QStringLiteral("\nSe retiraron %1 pasos antiguos por los límites de historial.").arg(commit.discardedSteps));
+                }catch(const std::exception& e) {
+                    outcome_->setText(QStringLiteral("No se pudo aplicar el corte: %1. Se conserva la sesión anterior.").arg(QString::fromUtf8(e.what())));
+                }
             }
-            job_.reset();open_->setEnabled(true);cutControls_->setEnabled(true);cancel_->hide();progress_->hide();
+            job_.reset();open_->setEnabled(true);cancel_->hide();progress_->hide();updateHistoryActions();
         });
         worker_->start();
     }
@@ -496,9 +640,9 @@ private:
         if(!sourcePath_.isEmpty()&&!canonical.isEmpty()&&canonical.compare(QFileInfo(sourcePath_).canonicalFilePath(),Qt::CaseInsensitive)==0) {
             QMessageBox::warning(this,QStringLiteral("Conservar origen"),QStringLiteral("Elija otro destino para conservar el archivo fuente."));return;
         }
-        const bool isCutPiece=bool(cutResult_)&&pieces_->currentIndex()!=0;
-        const std::shared_ptr<const void> owner=isCutPiece ? std::shared_ptr<const void>(cutResult_):std::shared_ptr<const void>(mesh_);
-        auto selected=std::shared_ptr<const stlcut::Mesh>(owner,selectedMesh());
+        const auto piece=history_.selected();
+        const bool isCutPiece=piece->parentId!=0;
+        const auto selected=piece->mesh;
         job_=std::make_shared<ImportJob>();const auto job=job_;
         worker_=QThread::create([selected,path,job,isCutPiece] {
             try {
@@ -533,7 +677,7 @@ private:
             }catch(const stlcut::ImportCancelled&) {job->cancelled=true;}
             catch(const std::exception& e) {job->error=QString::fromUtf8(e.what());}
         });
-        worker_->setParent(this);open_->setEnabled(false);cutControls_->setEnabled(false);
+        worker_->setParent(this);open_->setEnabled(false);cutControls_->setEnabled(false);updateHistoryActions();
         cancel_->setText(QStringLiteral("Cancelar exportación (Ctrl+.)"));
         cancel_->setEnabled(true);cancel_->show();progress_->show();
         outcome_->setText(QStringLiteral("Exportando STL y comprobando reimportación…"));
@@ -542,18 +686,21 @@ private:
             outcome_->setText(job->cancelled ? QStringLiteral("Exportación cancelada antes de guardar."):
                 !job->error.isEmpty() ? QStringLiteral("No se pudo exportar: %1").arg(job->error):
                 QStringLiteral("STL exportado y reimportado para comprobar triángulos y volumen: %1\nSTL no guarda unidades, colores ni materiales.").arg(path));
-            job_.reset();open_->setEnabled(true);cutControls_->setEnabled(true);cancel_->hide();progress_->hide();
+            job_.reset();open_->setEnabled(true);cancel_->hide();progress_->hide();updateHistoryActions();
         });
         worker_->start();
     }
     QString sourcePath_;
-    std::shared_ptr<stlcut::CutResult> cutResult_;
-    std::shared_ptr<const ViewMesh> originalView_,positiveView_,negativeView_;
+    stlcut::EditHistory history_;
+    std::map<stlcut::PieceId,std::shared_ptr<const ViewMesh>> pieceViews_;
+    QAction* undo_{};
+    QAction* redo_{};
+    QPushButton* cutButton_{};
+    QLabel* historyStatus_{};
     QWidget* cutControls_{};
     std::array<QDoubleSpinBox*,4> planeInputs_{};
     QCheckBox* preview_{};
     QComboBox* pieces_{};
-    std::shared_ptr<stlcut::Mesh> mesh_;
     std::shared_ptr<ImportJob> job_;
     QThread* worker_{};
     QLabel* info_{};
@@ -569,7 +716,7 @@ private:
 int main(int argc, char* argv[])
 {
     if (argc > 1 && (std::strcmp(argv[1], "--inspect-stdin") == 0 ||
-                     std::strcmp(argv[1], "--inspect") == 0 || std::strcmp(argv[1], "--cut-stdin") == 0)) {
+                     std::strcmp(argv[1], "--inspect") == 0 || std::strcmp(argv[1], "--cut-stdin") == 0 || std::strcmp(argv[1], "--edit-stdin") == 0)) {
         return inspect(argc, argv);
     }
     QApplication app(argc, argv);

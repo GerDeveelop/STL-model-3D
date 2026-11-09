@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(STLCutStudioAI VERSION 0.2.1 LANGUAGES CXX)
+project(STLCutStudioAI VERSION 0.2.2 LANGUAGES CXX)
 
 if(NOT WIN32 OR NOT MSVC)
     message(FATAL_ERROR "Esta base requiere Windows y MSVC x64.")
@@ -43,7 +43,7 @@ set_target_properties(lib3mf PROPERTIES
     IMPORTED_LOCATION "${LIB3MF_ROOT}/Bin/lib3mf.dll"
     INTERFACE_INCLUDE_DIRECTORIES "${LIB3MF_ROOT}/Bindings/Cpp")
 add_library(stlcut_core STATIC core/io/StlReader.cpp core/io/MeshReader.cpp
-    core/io/StlWriter.cpp core/cutting/PlaneCut.cpp)
+    core/io/StlWriter.cpp core/cutting/PlaneCut.cpp core/projects/EditHistory.cpp)
 target_link_libraries(stlcut_core PUBLIC lib3mf PRIVATE manifold)
 target_compile_definitions(stlcut_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 set_target_properties(stlcut_core PROPERTIES AUTOMOC OFF AUTOUIC OFF)

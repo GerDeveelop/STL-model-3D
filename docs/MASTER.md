@@ -1,7 +1,7 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
-**Versión del documento:** 1.3
-**Estado:** versión de desarrollo 0.2.1 con importación STL/3MF, visor, corte por Manifold 3.5.4 y exportación STL. Verificados tubos/cavidades, coincidencias con caras/aristas, contornos superiores a 4096 vértices y cancelación. 63 casos inline y 15 del paquete satisfactorios localmente. Sigue requiriendo geometría válida y límites de recursos; contratos y evidencia en [MANIFOLD_CUT.md](MANIFOLD_CUT.md). Cambios subidos a main; CI Windows 0.2.1 satisfactoria en b1ede31 (build, paquete y 15 casos), con evidencia remota en CI.md. La fase 0.2 continúa; el instalador final corresponde a 1.0.
+**Versión del documento:** 1.4
+**Estado:** versión de desarrollo 0.2.2 con STL/3MF, corte Manifold, cortes encadenados y Deshacer/Rehacer durante la sesión. Release y validaciones locales satisfactorios: 22 casos de historial, 63 de geometría/importación y 21 del paquete. Uso y límites en [HISTORY.md](HISTORY.md). Este incremento permanece local; la última CI remota corresponde a 0.2.1 (b1ede31). La fase 0.2 continúa y el instalador final corresponde a 1.0.
 **Plataforma:** Windows 10/11 x64  
 **IDE:** Visual Studio Code + Codex  
 **Objetivo:** aplicación local instalable para importar, reparar, cortar y exportar mallas 3D; posteriormente generar modelos a partir de imágenes y texto.
@@ -149,6 +149,7 @@ El código real deberá documentar interfaces y contratos de cada módulo. Evita
 - No ejecutar scripts arbitrarios de IA sin aislamiento y validación.
 
 ### RF-08: proyectos
+- Implementado en 0.2.2: historial de cortes en memoria, selección/plano y procedencia; límites y validación en HISTORY.md. Guardar/reabrir proyectos en disco permanece pendiente.
 - Guardar archivos fuente, transformaciones, cortes, parámetros y versión de esquema.
 - No sobrescribir fuentes originales por defecto.
 
@@ -242,7 +243,7 @@ No publicar versión 1.0 sin validar el instalador `.exe` y la aplicación insta
 | Fase | Resultado | Condición de salida |
 |---|---|---|
 | 0.1 | Ventana Qt, STL, visor, CI y ZIP provisional | Compilación local y CI satisfactorias, funciones verificadas y paquete con runtime comprobado; sin segundo PC ni VM obligatoria en esta fase |
-| 0.2 | Importación 3MF, corte por plano, exportación STL | Unidades/transformaciones correctas, límites explícitos, volumen y reimportación comprobados |
+| 0.2 | Importación 3MF, corte por plano, exportación STL e historial de sesión | Unidades/transformaciones correctas, límites explícitos, volumen y reimportación comprobados |
 | 0.3 | Conectores, validación y reparación | Fixtures y tolerancias verificadas |
 | 0.4 | Imagen→3D con adaptador IA | Generación + validación de malla |
 | 0.5 | Texto→3D y asistente | Operaciones verificables y seguras |

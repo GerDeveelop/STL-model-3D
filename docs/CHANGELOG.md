@@ -1,5 +1,13 @@
 # Registro de cambios
 
+## 2026-11-08 — Historial y cortes encadenados 0.2.2
+
+- Cortar cualquier pieza activa conservando hermanas, IDs y procedencia; original visible/exportable como referencia.
+- Deshacer/Rehacer recuperan piezas, selección y plano. Geometría compartida; máximo 32 pasos, 256 piezas y 1 GiB contabilizado. Fallo/cancelación no altera el historial; corte nuevo elimina Rehacer. Sesión en memoria, sin guardar proyectos.
+- CLI de producción --edit-stdin, seis aceptaciones adicionales del workflow y documentación HISTORY.md. Sin nuevas dependencias ni archivos de pruebas propios.
+
+Validación local: Release, 22 casos de historial, 63 de regresión y 21 del paquete satisfactorios; interfaz visible revisada. Alcance de cancelación y evidencia en HISTORY.md. Sin commit/push ni nueva CI remota de este incremento; instalador final pendiente de fase 1.0.
+
 ## 2026-11-08 — Publicación 0.2.1 y CI Windows satisfactoria
 
 - Subido main en b1ede31a1a54700b2bd2495f5119ca600895a796, tras autorización del usuario. Fuera de Git: build/, binarios, SDK y prueba.stl.
