@@ -19,6 +19,8 @@ struct EditState {
     PieceId selected{};
     Plane plane;
     bool planeVisible{true};
+    ConnectorSpec connector;
+    bool connectorEnabled{};
 };
 struct HistoryLimits {
     std::uint64_t bytes=1024ULL*1024*1024;
@@ -39,8 +41,11 @@ public:
     bool selectedIsActive() const;
     void select(PieceId id);
     void setPlane(Plane plane,bool visible=true);
+    void setConnector(ConnectorSpec connector,bool enabled);
     CutCommit commitCut(std::shared_ptr<const Mesh> positive,std::shared_ptr<const Mesh> negative,
                         std::uint64_t positivePresentationBytes=0,std::uint64_t negativePresentationBytes=0);
+    std::vector<PieceId> commitSplit(const std::vector<std::shared_ptr<const Mesh>>& pieces,
+                                    const std::vector<std::uint64_t>& presentationBytes = {});
     bool undo();
     bool redo();
     size_t undoCount() const {return cursor_;}

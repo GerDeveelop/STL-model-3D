@@ -42,19 +42,45 @@ std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::s
     result->center = center;
     result->scale = scale;
     if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
-    result->vertices.reserve(mesh.triangles.size() * 3);
-    for (const auto& triangle : mesh.triangles) {
-        if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
+    if(mesh.paintedTriangles>mesh.triangles.size()||mesh.paintFacets.size()<mesh.paintedTriangles)
+        throw std::runtime_error("Metadatos de pintura inconsistentes.");
+    const auto displayCount=mesh.triangles.size()+mesh.paintFacets.size()-mesh.paintedTriangles;
+    if(displayCount>stlcut::maxTriangles)throw std::runtime_error("Presentacion de pintura supera 2 millones de caras.");
+    result->vertices.reserve(displayCount*3);
+    auto emitTriangle=[&](const stlcut::Triangle& triangle,const std::array<std::int32_t,3>& labels,bool unresolved=false) {
+        if(stop.stop_requested())throw stlcut::ImportCancelled{};
         QVector3D p[3];
-        for (std::size_t i = 0; i < 3; ++i) {
-            const auto& v = triangle.vertices[i];
-            p[i] = {static_cast<float>((v.x-center.x)/scale*2),
-                    static_cast<float>((v.y-center.y)/scale*2),
-                    static_cast<float>((v.z-center.z)/scale*2)};
+        for(size_t i=0;i<3;++i) {
+            const auto& v=triangle.vertices[i];
+            p[i]={static_cast<float>((v.x-center.x)/scale*2),static_cast<float>((v.y-center.y)/scale*2),static_cast<float>((v.z-center.z)/scale*2)};
         }
-        const auto normal = QVector3D::crossProduct(p[1]-p[0], p[2]-p[0]).normalized();
-        for (const auto& v : p) { result->vertices.push_back(vertex(v, normal)); }
+        const auto normal=QVector3D::crossProduct(p[1]-p[0],p[2]-p[0]).normalized();
+        for(size_t j=0;j<3;++j) {
+            auto item=vertex(p[j],normal);const auto label=labels[j];
+            if(label>=0&&static_cast<size_t>(label)<mesh.materials.size()) {
+                const auto& rgba=mesh.materials[label].rgba;item.r=rgba[0]/255.f;item.g=rgba[1]/255.f;item.b=rgba[2]/255.f;
+            } else if(unresolved)item.r=item.g=item.b=.5f;
+            result->vertices.push_back(item);
+        }
+    };
+    size_t paintIndex=0,painted=0;
+    for(size_t i=0;i<mesh.triangles.size();++i) {
+        const auto& source=mesh.triangles[i];
+        if(paintIndex<mesh.paintFacets.size()&&mesh.paintFacets[paintIndex].sourceTriangle<i)
+            throw std::runtime_error("Pintura fuera de orden respecto a la fuente.");
+        if(paintIndex<mesh.paintFacets.size()&&mesh.paintFacets[paintIndex].sourceTriangle==i) {
+            ++painted;
+            while(paintIndex<mesh.paintFacets.size()&&mesh.paintFacets[paintIndex].sourceTriangle==i) {
+                const auto& facet=mesh.paintFacets[paintIndex++];stlcut::Triangle triangle;
+                for(size_t j=0;j<3;++j) {
+                    const auto w=facet.barycentric.vertices[j];const auto a=source.vertices[0],b=source.vertices[1],c=source.vertices[2];
+                    triangle.vertices[j]={w.x*a.x+w.y*b.x+w.z*c.x,w.x*a.y+w.y*b.y+w.z*c.y,w.x*a.z+w.y*b.z+w.z*c.z};
+                }
+                emitTriangle(triangle,{facet.material,facet.material,facet.material},facet.material<0);
+            }
+        } else emitTriangle(source,mesh.styles.size()==mesh.triangles.size()?mesh.styles[i].material:std::array<std::int32_t,3>{-1,-1,-1});
     }
+    if(paintIndex!=mesh.paintFacets.size()||painted!=mesh.paintedTriangles)throw std::runtime_error("Pintura no coincide con la fuente de presentacion.");
     if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
     return result;
 }
@@ -119,13 +145,16 @@ void MeshView::initializeGL()
         #version 330 core
         layout(location=0) in vec3 position;
         layout(location=1) in vec3 normal;
+        layout(location=2) in vec3 vertexColor;
         uniform mat4 mvp;
         out vec3 faceNormal;
-        void main() { gl_Position = mvp * vec4(position,1.0); faceNormal=normal; }
+        out vec3 surfaceColor;
+        void main() { gl_Position = mvp * vec4(position,1.0); faceNormal=normal; surfaceColor=vertexColor; }
     )";
     const char* fragmentShader = R"(
         #version 330 core
         in vec3 faceNormal;
+        in vec3 surfaceColor;
         uniform vec3 color;
         uniform bool lighting;
         out vec4 fragColor;
@@ -136,7 +165,7 @@ void MeshView::initializeGL()
                 if(!gl_FrontFacing) n=-n;
                 shade=0.30+0.70*max(dot(n,normalize(vec3(0.4,-0.6,1.0))),0.0);
             }
-            fragColor=vec4(color*shade,1.0);
+            fragColor=vec4((lighting ? surfaceColor : color)*shade,1.0);
         }
     )";
     if (!program_.addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader) ||
@@ -211,8 +240,10 @@ void MeshView::paintGL()
     auto attributes = [this] {
         program_.enableAttributeArray(0);
         program_.enableAttributeArray(1);
+        program_.enableAttributeArray(2);
         program_.setAttributeBuffer(0, GL_FLOAT, offsetof(ViewVertex,x), 3, sizeof(ViewVertex));
         program_.setAttributeBuffer(1, GL_FLOAT, offsetof(ViewVertex,nx), 3, sizeof(ViewVertex));
+        program_.setAttributeBuffer(2, GL_FLOAT, offsetof(ViewVertex,r), 3, sizeof(ViewVertex));
     };
     if (mesh_ && !mesh_->vertices.empty()) {
         meshBuffer_.bind();

@@ -6,6 +6,7 @@
       "name": "windows-x64-release",
       "displayName": "Windows x64 Release (MSVC + Qt Widgets)",
       "generator": "Ninja",
+      "environment": { "VSLANG": "1033" },
       "binaryDir": "${sourceDir}/build/windows-x64-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",

@@ -56,3 +56,17 @@ Máximo 256 comandos y 256 MiB acumulados de bytes STL exportados por llamada (e
 - Interfaz visible: cubo 3MF de 10 mm, primer corte 1000 → 500+500, segundo sobre la parte positiva 500 → 250+250; tres piezas activas. Ctrl+Z/Ctrl+Y recuperaron las piezas y selección anteriores, normal X, posición 5 y plano oculto. Corte alternativo sobre Y tras deshacer generó IDs 6/7, conservó la pieza 3 y eliminó Rehacer. Original intacto visible como referencia con Cortar deshabilitado. Evidencia `build/history-gui-chain.txt`, `history-gui-undo.txt`, `history-gui-redo.txt`, `history-gui-branch.txt`, `history-gui-original-reference.txt`.
 
 Cancelación visible comprobada con el paquete 0.2.2 y una malla de 1 929 612 triángulos generada en memoria: completar un corte, deshacer y cancelar otro mediante Ctrl+. conservó el original (#1), Deshacer 0 y Rehacer 1. Ctrl+Y recuperó las piezas #2/#3, selección #2 y Deshacer 1/Rehacer 0, sin recalcular el corte. La barra de estado mostró correctamente dos piezas. Evidencia: `build/history-gui-cancel-redo.txt` y `build/history-gui-redo-after-cancel.txt`. Cierre normal con Alt+F4 y ventana ausente en el inventario posterior. El presupuesto mostrado fue 265.00 MiB contabilizados; no es una medición RSS ni certifica latencia máxima. No se repitió guardado nativo asistido; sí la serialización/reimportación de piezas por CLI. Código publicado y CI satisfactoria según CI.md; no se genera instalador final en este incremento.
+
+## Validación posterior con modelos reales
+
+Cinco secuencias reales de cortes y undo/redo correctas. La rama export del CLI solo serializa y puede devolver éxito para una salida float32 con degeneraciones, aunque la importación y el volumen parezcan correctos: dos casos encontrados en quince piezas. No equivale al guardado validado de la interfaz. Hallazgo y ajuste pendiente en [REAL_MODEL_VALIDATION.md](REAL_MODEL_VALIDATION.md).
+
+Desde 0.2.3 la rama export del CLI usa la validación compartida y rechaza esas conversiones, conservando historial y Rehacer; véase [EXPORT_VALIDATION.md](EXPORT_VALIDATION.md). El hallazgo anterior describe 0.2.2.
+
+## Separación de regiones 0.3.1
+
+La separación por material reemplaza una pieza por varios sólidos en un solo paso. commitSplit valida IDs/límites y construye una línea temporal candidata; error/cancelación conserva geometría y Rehacer. El presupuesto incluye materiales, estilos e instancias/nombres. El máximo de 32 pasos aplica a cortes y separaciones. Los resultados conservan color y procedencia; detalles en COLOR_IMPORT.md.
+
+## Metadatos de pintura 0.3.2 en validación
+
+Presupuestados PaintFacet y jerarquías/partes de origen junto a la malla compartida. El original con pintura queda como referencia al hacer un corte geométrico; no se reproyecta pintura a las caras nuevas. La validación final de esta ampliación está bloqueada, según PAINT_IMPORT.md.

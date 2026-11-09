@@ -35,6 +35,11 @@ std::uint64_t EditHistory::retainedBytes(const std::vector<EditState>& states,co
         add(sizeof(Piece)+p->name.capacity()+p->parentName.capacity()+p->presentationBytes);
         if(meshes.insert(p->mesh.get()).second) {
             add(sizeof(Mesh)+p->mesh->triangles.capacity()*sizeof(Triangle)+p->mesh->units.capacity()+p->mesh->format.capacity());
+            add(p->mesh->styles.capacity()*sizeof(TriangleStyle)+p->mesh->materials.capacity()*sizeof(Material));
+            add(p->mesh->instances.capacity()*sizeof(SourceInstance));
+            for(const auto& instance:p->mesh->instances)add(instance.name.capacity()+instance.partPath.capacity()+instance.objectHierarchy.capacity()*sizeof(std::uint32_t));
+            add(p->mesh->paintFacets.capacity()*sizeof(PaintFacet));
+            for(const auto& material:p->mesh->materials)add(material.name.capacity());
             for(const auto& warning:p->mesh->warnings)add(warning.capacity());
         }
     };
@@ -81,6 +86,9 @@ void EditHistory::select(PieceId id) {
 void EditHistory::setPlane(Plane plane,bool visible) {
     state();states_[cursor_].plane=plane;states_[cursor_].planeVisible=visible;
 }
+void EditHistory::setConnector(ConnectorSpec connector,bool enabled) {
+    state();states_[cursor_].connector=connector;states_[cursor_].connectorEnabled=enabled;
+}
 CutCommit EditHistory::commitCut(std::shared_ptr<const Mesh> positive,std::shared_ptr<const Mesh> negative,
                                 std::uint64_t positiveBytes,std::uint64_t negativeBytes) {
     if(!selectedIsActive())throw std::runtime_error("El original es una referencia; seleccione una pieza activa para cortar.");
@@ -107,6 +115,35 @@ CutCommit EditHistory::commitCut(std::shared_ptr<const Mesh> positive,std::share
         throw std::runtime_error("El nuevo estado no cabe en el presupuesto del historial; se conserva la sesion anterior.");
     states_.swap(candidate);cursor_=states_.size()-1;nextId_+=2;
     return {plus->id,minus->id,discarded};
+}
+std::vector<PieceId> EditHistory::commitSplit(const std::vector<std::shared_ptr<const Mesh>>& meshes,
+                                          const std::vector<std::uint64_t>& presentationBytes) {
+    if(!selectedIsActive())throw std::runtime_error("Seleccione una pieza activa para separar.");
+    if(meshes.size()<2||meshes.size()>limits_.pieces||state().pieces.size()-1+meshes.size()>limits_.pieces)
+        throw std::runtime_error("La separacion excede el limite de piezas activas o no produce dos piezas.");
+    if(!presentationBytes.empty()&&presentationBytes.size()!=meshes.size())throw std::runtime_error("Vistas de separacion inconsistentes.");
+    if(nextId_>std::numeric_limits<PieceId>::max()-meshes.size())throw std::runtime_error("Identificadores agotados.");
+    const auto parent=selected();std::vector<PiecePtr> replacements;std::vector<PieceId> ids;
+    for(size_t i=0;i<meshes.size();++i) {
+        validMesh(meshes[i]);const auto id=nextId_+i;
+        std::string name="Region "+std::to_string(id);
+        if(!meshes[i]->materials.empty()) {
+            const auto& m=meshes[i]->materials.front();
+            name+=" [material "+std::to_string(m.resource)+":"+std::to_string(m.property)+"]";
+            if(!m.name.empty())name+=" "+m.name;
+        }
+        replacements.push_back(std::make_shared<const Piece>(Piece{id,parent->id,std::move(name),parent->name,meshes[i],presentationBytes.empty()?0:presentationBytes[i]}));
+        ids.push_back(id);
+    }
+    auto after=state();
+    const auto it=std::find_if(after.pieces.begin(),after.pieces.end(),[&](const auto& p){return p->id==parent->id;});
+    const auto index=it-after.pieces.begin();after.pieces.erase(it);
+    after.pieces.insert(after.pieces.begin()+index,replacements.begin(),replacements.end());after.selected=ids.front();
+    std::vector<EditState> candidate(states_.begin(),states_.begin()+static_cast<std::ptrdiff_t>(cursor_+1));
+    candidate.push_back(std::move(after));
+    while(candidate.size()>limits_.cuts+1||(candidate.size()>1&&retainedBytes(candidate,original_)>limits_.bytes))candidate.erase(candidate.begin());
+    if(retainedBytes(candidate,original_)>limits_.bytes)throw std::runtime_error("La separacion supera el presupuesto; se conserva el historial anterior.");
+    states_.swap(candidate);cursor_=states_.size()-1;nextId_+=meshes.size();return ids;
 }
 bool EditHistory::undo() {if(!cursor_)return false;--cursor_;return true;}
 bool EditHistory::redo() {if(!redoCount())return false;++cursor_;return true;}

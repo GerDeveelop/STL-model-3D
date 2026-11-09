@@ -1,6 +1,6 @@
 # Requisitos de fase 0.1
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
+> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -65,3 +65,13 @@ No se requieren API keys ni endpoints externos para importar y visualizar STL lo
 | F13 | Deshacer/Rehacer durante la sesión | Restaurar piezas, selección y plano; corte nuevo descarta Rehacer; fallo/cancelación conserva historial; 32 pasos, 256 piezas, 1 GiB contabilizado según HISTORY.md |
 
 El motor vigente desde 0.2.1 admite contornos con huecos y casos coplanares comprobados mediante Manifold 3.5.4. Se mantiene la exigencia de geometría válida y límites de recursos, sin tope independiente de 4096 vértices; véase MANIFOLD_CUT.md. No se promete reparar mallas ni conservar colores/configuración del laminador. Véase PHASE_02.md.
+
+## Alcance aprobado de fase 0.3
+
+Conectores pin/cavidad con parámetros, integración transaccional con Deshacer/Rehacer y separación automática de regiones por color/material 3MF con conectores entre vecinas. Distinguir sólidos existentes de pintura superficial: para esta última el usuario eligió ofrecer ambos modos: insertos de profundidad configurable y partición de todo el volumen. Requisitos y aceptación prevista en [PHASE_03.md](PHASE_03.md). No se declaran funciones implementadas.
+
+Primer incremento implementado: pin/cavidad al cortar, validación de guardas y volumen, parámetros nominales, undo/redo y errores transaccionales. No implementa todavía separación por color; uso y evidencia en PHASE_03.md.
+
+Implementado en 0.3.1: materiales/objetos estándar, separación de regiones cerradas y transacción múltiple de historial; conectores entre dos regiones con contacto plano alineado a ejes. Pintura de fabricante, insertos y partición volumétrica permanecen pendientes. No se interpreta un conjunto abierto de triángulos como un sólido. Límites en COLOR_IMPORT.md.
+
+Construido para 0.3.2: conservar subdivisiones de pintura como regiones superficiales, paleta e herencia de filamentos; reportar asignaciones no resueltas sin inventar colores. La malla fuente no cambia. El binario final aún no tiene aceptación dinámica por bloqueo del sistema; no se implementan ni declaran listos los sólidos de insertos/partición. PAINT_IMPORT.md.

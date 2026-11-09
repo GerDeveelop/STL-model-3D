@@ -87,7 +87,7 @@ void verifyClosedMesh(const Mesh& mesh,double epsilon,std::stop_token stop) {
     if(!std::isfinite(epsilon)||epsilon<=0)invalid("Tolerancia de cierre no valida.");
     closed(mesh,epsilon,stop);
 }
-CutResult cutByPlane(const Mesh& mesh,Plane plane,std::stop_token stop) {
+CutResult cutByPlane(const Mesh& mesh,Plane plane,std::stop_token stop,const ConnectorSpec* connector) {
     check(stop);
     if(mesh.triangles.empty()||mesh.triangles.size()>maxTriangles)
         invalid("No hay una malla cortable dentro del limite de 2 millones de triangulos.");
@@ -176,6 +176,64 @@ CutResult cutByPlane(const Mesh& mesh,Plane plane,std::stop_token stop) {
     if(halves.first.IsEmpty()||halves.second.IsEmpty())
         invalid("El plano no produce dos piezas con volumen. Es exterior o solo tangente; el modelo se conserva.");
 
+    double connectorDelta=0;
+    if(connector) {
+        const auto& c=*connector;
+        if(!std::isfinite(c.diameter)||!std::isfinite(c.depth)||!std::isfinite(c.clearance)||!std::isfinite(c.wall)||
+           c.diameter<=0||c.depth<=0||c.clearance<0||c.wall<=0||
+           c.diameter>extent||c.depth>extent||c.clearance>extent||c.wall>extent)
+            invalid("Parametros del conector invalidos para las dimensiones de la pieza.");
+        const double radius=c.diameter/(2*extent),depth=c.depth/extent;
+        const double gap=c.clearance/(2*extent),wall=c.wall/extent;
+        if(std::min({radius,depth,wall})<epsilon/extent*100)
+            invalid("Conector demasiado pequeno para la tolerancia del modelo.");
+        const auto n=plane.normal;
+        const Vec3 axis=std::abs(n.z)<.9 ? Vec3{0,0,1}:Vec3{1,0,0};
+        auto u=cross(axis,n);u=mul(u,1/std::hypot(u.x,u.y,u.z));
+        const auto v=cross(n,u);
+        const auto base=mul(n,normalizedOffset);
+        auto cylinder=[&](Vec3 origin,double height,double r) {
+            return manifold::Manifold::Cylinder(height,r,r,64,false).Transform(
+                manifold::mat3x4{{u.x,u.y,u.z},{v.x,v.y,v.z},{n.x,n.y,n.z},{origin.x,origin.y,origin.z}});
+        };
+        bool found=false;
+        // Search a bounded set on the actual section, then verify containment by
+        // Boolean difference. A box centre alone does not prove a safe contact.
+        for(double a:{0.,-.15,.15,-.3,.3}) {
+            for(double b:{0.,-.15,.15,-.3,.3}) {
+                check(stop);
+                const Vec3 p{base.x+a*u.x+b*v.x,base.y+a*u.y+b*v.y,base.z+a*u.z+b*v.z};
+                const auto negativeStart=Vec3{p.x-n.x*(depth+gap+wall),p.y-n.y*(depth+gap+wall),p.z-n.z*(depth+gap+wall)};
+                const double circumscribe=1/std::cos(std::acos(-1.)/64);
+                const auto receiverGuard=cylinder(negativeStart,depth+gap+wall,(radius+gap+wall)*circumscribe);
+                const auto anchorGuard=cylinder(p,wall,(radius+wall)*circumscribe);
+                const auto receiverOutside=receiverGuard-halves.second;
+                const auto anchorOutside=anchorGuard-halves.first;
+                requireValid(receiverOutside.Status());requireValid(anchorOutside.Status());
+                if(receiverOutside.Volume()>receiverGuard.Volume()*1e-8||anchorOutside.Volume()>anchorGuard.Volume()*1e-8)continue;
+                const Vec3 pinStart{p.x-n.x*depth,p.y-n.y*depth,p.z-n.z*depth};
+                const auto pin=cylinder(pinStart,depth+wall,radius);
+                const auto socket=cylinder({p.x-n.x*(depth+gap),p.y-n.y*(depth+gap),p.z-n.z*(depth+gap)},depth+gap+wall,radius+gap);
+                auto positive=halves.first+pin;
+                auto negative=halves.second-socket;
+                requireValid(positive.Status());requireValid(negative.Status());
+                check(stop);
+                if(positive.IsEmpty()||negative.IsEmpty())continue;
+                const auto pinExtension=cylinder(pinStart,depth,radius);
+                const auto removedSocket=cylinder({p.x-n.x*(depth+gap),p.y-n.y*(depth+gap),p.z-n.z*(depth+gap)},depth+gap,radius+gap);
+                const double added=positive.Volume()-halves.first.Volume();
+                const double removed=halves.second.Volume()-negative.Volume();
+                if(std::abs(added-pinExtension.Volume())>pinExtension.Volume()*1e-7||
+                   std::abs(removed-removedSocket.Volume())>removedSocket.Volume()*1e-7)
+                    invalid("El conector no conserva sus dimensiones nominales; resultado descartado.");
+                connectorDelta=(pinExtension.Volume()-removedSocket.Volume())*cubicExtent;
+                halves={std::move(positive),std::move(negative)};found=true;break;
+            }
+            if(found)break;
+        }
+        if(!found)invalid("No se encontro un contacto con profundidad y pared suficientes para el conector; reduzca parametros o cambie el plano.");
+    }
+
     auto convert=[&](const manifold::Manifold& half) {
         check(stop);
         const auto triangles=half.NumTri(),vertices=half.NumVert();
@@ -185,6 +243,8 @@ CutResult cutByPlane(const Mesh& mesh,Plane plane,std::stop_token stop) {
         const auto data=half.GetMeshGL64();
         check(stop);
         Mesh output;output.format="cut-manifold";output.units=mesh.units;output.warnings=mesh.warnings;
+        output.unsupportedAppearance=mesh.unsupportedAppearance;
+        if(!mesh.paintFacets.empty())output.warnings.push_back("Corte geometrico: la pintura superficial no se reproyecta a los resultados. El original con pintura permanece en el historial.");
         if(data.numProp<3||data.triVerts.size()%3)invalid("Manifold devolvio buffers de geometria inconsistentes.");
         output.triangles.reserve(data.triVerts.size()/3);
         for(size_t i=0;i<data.triVerts.size();i+=3) {
@@ -200,6 +260,25 @@ CutResult cutByPlane(const Mesh& mesh,Plane plane,std::stop_token stop) {
             output.triangles.push_back(triangle);
         }
         updateBounds(output);
+        if(!mesh.styles.empty()) {
+            const auto label=mesh.styles.front().material[0];
+            const bool uniform=label>=0&&static_cast<size_t>(label)<mesh.materials.size()&&
+                std::all_of(mesh.styles.begin(),mesh.styles.end(),[&](const TriangleStyle& s) {
+                    return s.material[0]==label&&s.material[1]==label&&s.material[2]==label;
+                });
+            if(uniform) {
+                output.materials.push_back(mesh.materials[label]);
+                std::uint32_t instanceId=0;
+                if(mesh.instances.size()==1) {
+                    output.instances=mesh.instances;auto& instance=output.instances.front();
+                    instance.firstTriangle=0;instance.triangleCount=static_cast<std::uint32_t>(output.triangles.size());instanceId=instance.id;
+                }
+                output.styles.resize(output.triangles.size(),TriangleStyle{instanceId,{0,0,0}});
+            } else {
+                output.unsupportedAppearance=true;
+                output.warnings.push_back("Corte geometrico sobre varios colores: las etiquetas originales no se proyectan a las caras nuevas. Separe por material antes de cortar para conservarlas.");
+            }
+        }
         closed(output,epsilon,stop);
         return output;
     };
@@ -209,7 +288,7 @@ CutResult cutByPlane(const Mesh& mesh,Plane plane,std::stop_token stop) {
     result.negativeVolume=signedVolume(result.negative);
     if(!std::isfinite(result.positiveVolume)||!std::isfinite(result.negativeVolume)||
        result.positiveVolume<=0||result.negativeVolume<=0||
-       std::abs(result.positiveVolume+result.negativeVolume-result.originalVolume)>
+       std::abs(result.positiveVolume+result.negativeVolume-result.originalVolume-connectorDelta)>
        std::max(result.originalVolume*1e-7,cubicExtent*1e-12))
         invalid("El corte no conserva el volumen dentro de tolerancia; resultado descartado.");
     check(stop);return result;

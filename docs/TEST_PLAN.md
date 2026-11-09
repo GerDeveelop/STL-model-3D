@@ -1,6 +1,6 @@
 # Plan de pruebas de fase 0.1
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
+> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -56,3 +56,27 @@ Ejecutadas localmente 48 comprobaciones inline de importación/ZIP/unidades/tran
 ## Aceptación local del historial 0.2.2
 
 Release satisfactorio; 22/22 casos de historial, 63/63 de regresión geométrica/importación y 21/21 del paquete con PATH mínimo. Verificados IDs/procedencia, conservación de hermanas y volumen, restauración de selección/plano, ramas, exportación/reimportación, límites reales de 32 pasos y 256 piezas, rechazo transaccional y descarte por presupuesto. Interfaz visible: encadenamiento, Ctrl+Z/Y, rama alternativa y original de referencia. Evidencia y alcance de cancelación en [HISTORY.md](HISTORY.md). Sin nuevas fuentes/fixtures de pruebas. Posteriormente CI remota satisfactoria: ejecución 6 sobre 34b0cb7, build/paquete y 21 casos; véase CI.md.
+
+## Validación de modelos reales
+
+Seis importaciones, cinco cortes encadenados/undo/redo y quince exportaciones/reimportaciones ejecutados localmente; un modelo rechazado por degeneración conservó su estado. Trece STL cerrados/orientados y dos fallos de topología float32 en exportación CLI. La fase 0.2 no se declara cerrada. Método, métricas y pendiente concreto en [REAL_MODEL_VALIDATION.md](REAL_MODEL_VALIDATION.md).
+
+## Aceptación de exportación 0.2.3
+
+Release satisfactorio, 22 casos de historial y 63 de geometría/importación con el caso trasladado adaptado al rechazo float32; 23 del paquete. Las dos piezas reales inválidas ahora se rechazan sin alterar geometría/historial, incluida rama Rehacer. Trece exportaciones reales válidas siguen aceptadas. Detalles y límites en [EXPORT_VALIDATION.md](EXPORT_VALIDATION.md).
+
+## Aceptación prevista de fase 0.3
+
+Color/material, regiones conectadas, contactos, grosor, holguras, booleanas de conectores, exportación verificada y transacciones de historial según PHASE_03.md. Comprobaciones por comandos, sin revisión visual por petición del usuario. Los casos de separación por color todavía no se han ejecutado.
+
+## Conectores al cortar: aceptación local 0.3.0
+
+16/16 casos de conectores, 22/22 de historial y 25/25 del paquete satisfactorios. Regresión geométrica/importación en connector-geometry-regression.json. Sin revisión visual ni CI remota nueva. Detalles y condiciones pendientes de color en PHASE_03.md.
+
+## Aceptación local 0.3.1
+
+20 casos de color, 63 de geometría/importación, 22 de historial, 16 de conectores y 28 del paquete correctos. Seis importaciones privadas preservadas; separaciones no interpretables rechazadas sin modificar fuentes. Corregida una mezcla de ABI por dependencias /showIncludes localizadas; seguimiento Mesh.h comprobado. No se realizó revisión visual ni CI remota nueva. Evidencia, cambios intencionales y límites en COLOR_IMPORT.md.
+
+## Pintura 0.3.2: aceptación pendiente
+
+Preparada batería inline de 36 casos con 80 árboles de subdivisión, herencia, reflexión, CRC/DTD/límites y fuente intacta. La última ejecución fue bloqueada antes de arrancar por WinError 4551; no se declara aprobada. Hubo 32/36 aceptaciones preliminares antes de corregir cuatro casos del generador/límite del SDK. Workflow ampliado a 32 casos, sin ejecución final local ni remota. Detalle de evidencia y separación de resultados en PAINT_IMPORT.md.

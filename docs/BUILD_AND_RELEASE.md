@@ -1,6 +1,6 @@
 # Compilación y paquete portátil Windows
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
+> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -110,3 +110,15 @@ Ejecutar bootstrap-manifold.ps1 antes del build. El motor está enlazado estáti
 ## Incremento 0.2.2 — 2026-11-08
 
 Release 0.2.2 y ZIP provisional comprobados localmente; inventario exacto de 74 archivos más manifiesto y 21 casos satisfactorios con PATH mínimo. SHA-256 y ruta en HISTORY.md. El texto del paquete explica el historial de sesión y sus límites. No es instalador final ni entrega verificada en VM limpia.
+
+## Paquete local 0.2.3
+
+Paquete provisional, hashes, inventario y 23 aceptaciones locales en EXPORT_VALIDATION.md. Sin nuevas DLL ni dependencias; no es el instalador final.
+
+## Paquete 0.3.1 local
+
+ZIP final, checksum e inventario de 74 archivos más manifiesto verificados con 28 aceptaciones y PATH mínimo; sin dependencias nuevas. La compilación corrige el seguimiento localizado de cabeceras y migra objetos antiguos una vez. Evidencia en COLOR_IMPORT.md. Sin push, release ni instalador final.
+
+## Paquete 0.3.2: verificación solo estática
+
+Release y ZIP generados con miniz estática y licencia original, 75 archivos más manifiesto. CRC/hashes/inventario comprobados sin ejecutar el exe bloqueado por Windows. No se declara runtime ni batería final aprobados. Hashes, registros y límite del bloqueo en PAINT_IMPORT.md. Sin commit/push ni release nuevo.

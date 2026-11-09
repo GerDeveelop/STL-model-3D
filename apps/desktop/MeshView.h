@@ -15,7 +15,7 @@
 #include <stop_token>
 #include <vector>
 
-struct ViewVertex { float x, y, z, nx, ny, nz; };
+struct ViewVertex { float x, y, z, nx, ny, nz; float r{.28f},g{.72f},b{.91f}; };
 struct ViewMesh {
     std::vector<ViewVertex> vertices;
     float radius{1};

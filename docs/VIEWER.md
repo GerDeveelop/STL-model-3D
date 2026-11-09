@@ -1,6 +1,6 @@
 # Visor 3D — fase 0.1
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
+> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -69,3 +69,11 @@ En el paquete actual se observaron ambas piezas de un tubo cuadrado, con hueco p
 ## Historial visible 0.2.2
 
 Selector de piezas activas con IDs y procedencia, original de referencia, botones Deshacer/Rehacer y uso del presupuesto. Al restaurar un estado se recuperan selección y plano, y se encuadra la pieza; la cámara no se guarda en el historial. Cortes sucesivos, ramas y atajos verificados en ventana visible; evidencia en HISTORY.md.
+
+## Presentación de colores estándar 0.3.1
+
+ViewVertex incorpora RGB y el shader distingue color de superficie e iluminación del color uniforme de las líneas/ejes. Se preparan propiedades por vértice y se conserva el azul predeterminado si faltan. Alpha se conserva en metadatos, pero la presentación sigue opaca. Buffer CPU/GPU pasa de 24 a 36 bytes por vértice; presupuesto de historia usa sizeof/capacity reales. No se realizó revisión visual por solicitud del usuario: no se declara verificado el resultado de shaders/GPU de este cambio. COLOR_IMPORT.md describe el alcance.
+
+## Pintura superficial 0.3.2 en validación
+
+Preparación de triángulos de presentación a partir de PaintFacet baricéntrico; fuente geométrica intacta, color por región y gris si no se resuelve. La reflexión intercambia base y orientación. Hay evidencia CPU preliminar, sin revisión visual por petición del usuario; la versión final quedó sin ejecución por Control de aplicaciones. No se certifican shaders/GPU ni se promete reconstrucción sólida. PAINT_IMPORT.md.

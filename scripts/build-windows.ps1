@@ -18,12 +18,29 @@ if ($env:VSCMD_ARG_TGT_ARCH -ne 'x64') {
 }
 
 Push-Location (Split-Path -Parent $PSScriptRoot)
+$previousVsLang = $env:VSLANG
+$env:VSLANG = '1033'
 try {
-    & cmake --preset windows-x64-release
+    # A localized /showIncludes prefix can be mis-decoded by compiler probing.
+    # Migrate such caches once and rebuild all objects, avoiding mixed Mesh ABIs.
+    $dependencyMarker = Join-Path (Get-Location) 'build/windows-x64-release/stlcut-deps-v1.txt'
+    $refreshCompiler = (Test-Path -LiteralPath 'build/windows-x64-release/CMakeCache.txt') -and
+        -not (Test-Path -LiteralPath $dependencyMarker)
+    $configureArgs = @('--preset', 'windows-x64-release')
+    if ($refreshCompiler) { $configureArgs += '--fresh' }
+    & cmake @configureArgs
     if ($LASTEXITCODE -ne 0) { throw "Configuración CMake fallida: $LASTEXITCODE" }
-    & cmake --build --preset windows-x64-release
+    $buildArgs = @('--build', '--preset', 'windows-x64-release')
+    if ($refreshCompiler) { $buildArgs += '--clean-first' }
+    & cmake @buildArgs
     if ($LASTEXITCODE -ne 0) { throw "Compilación fallida: $LASTEXITCODE" }
+    $readerDeps = (& ninja -C build/windows-x64-release -t deps CMakeFiles/stlcut_core.dir/core/io/StlReader.cpp.obj) -join "`n"
+    if ($LASTEXITCODE -ne 0 -or $readerDeps -notmatch 'core[\\/]mesh[\\/]Mesh\.h') {
+        throw 'Ninja no registra Mesh.h como dependencia; no usar binarios con ABI potencialmente desactualizada.'
+    }
+    'showIncludes prefix normalized; clean ABI migration completed' | Set-Content -LiteralPath $dependencyMarker -Encoding Ascii
 }
 finally {
+    $env:VSLANG = $previousVsLang
     Pop-Location
 }

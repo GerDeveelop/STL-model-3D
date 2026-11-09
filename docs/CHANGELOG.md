@@ -1,5 +1,29 @@
 # Registro de cambios
 
+## 2026-11-08 — Lectura de pintura 0.3.2 en validación
+
+Incorporada miniz 3.1.0 MIT tras autorización explícita; lector ZIP acotado, codec de pintura, asociación XML/JSON de filamentos y regiones baricéntricas separadas de la malla original. Nuevos diagnósticos CLI/CPU sin ventana. Release y paquete completados; solo inventario/CRC/hashes/licencias verificados en la versión final. Evidencia preliminar de pintura real, pero Windows bloqueó ejecución final con 4551 (Code Integrity); no se eludió ni se declara aceptación de las 36 pruebas o 32 del workflow. Sin revisión visual, push ni CI nueva. Insertos/partición volumétrica pendientes; PAINT_IMPORT.md.
+
+## 2026-11-08 — Materiales y regiones estándar 0.3.1
+
+Conservados materiales RGBA, propiedades por triángulo, objetos e instancias 3MF; separación exacta de regiones sólidas por material/conectividad con historial transaccional y RGB en presentación. Conectores automáticos para dos regiones con contacto plano en ejes, rechazando geometría incompatible. Corregido seguimiento de cabeceras Ninja/MSVC localizado y reconstruida ABI completa. 20 casos de color, 63 geométricos, 22 de historial, 16 de conectores y 28 del paquete correctos; seis modelos privados intactos. Sin revisión visual, push ni CI remota nueva. Pintura propietaria y ambos modos volumétricos siguen pendientes; alcance en COLOR_IMPORT.md.
+
+## 2026-11-08 — Primer incremento de conectores 0.3.0
+
+Pin en lado positivo y cavidad ciega en negativo al cortar; diámetro, profundidad, holgura diametral y pared configurables. Búsqueda acotada sobre el plano con guardas booleanas, volumen nominal y exportación validada. Historial conserva geometría y parámetros. 16 casos de conectores, 22 de historial y 25 del paquete correctos localmente; sin revisión visual, push ni CI nueva. Usuario eligió admitir cuerpos por color y pintura superficial, ofreciendo insertos y partición volumétrica; separación por color aún pendiente. Contrato en PHASE_03.md.
+
+## 2026-11-08 — Alcance aprobado de fase 0.3
+
+Conectores pin/cavidad y objetivo añadido de separar automáticamente 3MF por color con conectores. Inspeccionado importador/SDK y tres archivos privados en lectura: detectada pintura paint_color en uno. Documentado diseño y distinción entre cuerpos por color y pintura superficial en PHASE_03.md; política volumétrica pendiente. Sin funciones nuevas implementadas ni pruebas de fase 0.3 ejecutadas. Revisión visual omitida por instrucción del usuario.
+
+## 2026-11-08 — Exportación compartida validada 0.2.3
+
+Ajuste aprobado: extraída validación STL a StlWriter::validatedStl y usada por interfaz, edición JSON y corte CLI. Rechaza conversiones float32 que pierden precisión/cierre/volumen antes de guardar o devolver la pieza. Historial y Rehacer conservados; sin reparación ni dependencias nuevas. Release, 22 casos de historial, 63 de geometría (criterio trasladado actualizado), trece exportaciones reales válidas, dos rechazos reales y 23 casos del paquete comprobados. Detalles en EXPORT_VALIDATION.md. Cambios locales, sin commit/push ni CI remota nueva; instalador final pendiente.
+
+## 2026-11-08 — Validación real de fase 0.2
+
+Seis modelos privados importados sin modificar fuentes; cinco secuencias de cortes/undo/redo correctas y un rechazo esperado por degeneración. Quince exportaciones reimportadas: trece cerradas/orientadas y dos con degeneraciones tras conversión float32, emitidas por CLI sin su validación posterior. Registrados tiempos/memoria y pendiente de unificar validación CLI/interfaz en REAL_MODEL_VALIDATION.md. Sin cambios de código, dependencias, fuentes de pruebas, commit/push ni nueva CI. Fase 0.2 abierta.
+
 ## 2026-11-08 — Historial y cortes encadenados 0.2.2
 
 - Cortar cualquier pieza activa conservando hermanas, IDs y procedencia; original visible/exportable como referencia.

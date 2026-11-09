@@ -1,6 +1,6 @@
 # CI Windows x64
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
+> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -105,3 +105,21 @@ El workflow añade seis casos de historial a los quince existentes: encadenamien
 Código publicado en main como `34b0cb7eb839ca3fd96a3e88a9e4999d2f003bc1`. [Ejecución 6](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42545316348) completada con resultado success en todas las etapas: verificación de dependencias, build/paquete Release x64, 21 casos inline y carga de artefacto. Resultado consultado mediante la API pública de GitHub, sin acceder a credenciales.
 
 [Artefacto windows-x64-6](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42545316348/artifacts/13642754585): 16 109 877 bytes, retención de siete días, no expirado al consultar. Digest del contenedor de Actions: `sha256:03c4fcce16e36b5505ed621587508d8361fcec5c8a28e24ac4a16b7256f1f757`; no equivale al checksum del ZIP interior ni al ZIP local. No se descargó ni verificó de nuevo su contenido fuera del runner. Sin release público, instalador final ni validación en VM limpia. `prueba.stl` permanece intacto y fuera de Git.
+
+## Workflow local 0.2.3
+
+Añadidos dos casos de rechazo float32: edición conserva sesión y no añade bytes inválidos; corte CLI no emite STL al fallar validación. Las 23 aceptaciones pasaron contra el paquete nuevo con PATH mínimo. Sin push ni ejecución remota de este incremento. Evidencia en EXPORT_VALIDATION.md.
+
+## Workflow preparado para primer incremento 0.3.0
+
+25 comprobaciones locales del paquete, incluyendo dos nuevas de conectores y conservando las de exportación 0.2.3. Sin publicación ni nueva ejecución remota; PHASE_03.md contiene hashes y límites.
+
+## Workflow preparado para 0.3.1
+
+Tres casos adicionales de color/material y separación con conectores planares; 28 aceptaciones ejecutadas localmente sobre el ZIP final con PATH mínimo. Se solicitan mensajes MSVC en inglés y se verifica que Ninja registre Mesh.h; inglés disponible en CI anterior, español normalizado y comprobado localmente. No se ha ejecutado una nueva CI remota de este incremento. Hashes y límites en COLOR_IMPORT.md.
+
+## Workflow preparado para 0.3.2
+
+Bootstrap miniz 3.1.0 con SHA-256 y cuatro casos nuevos de pintura/área, presentación CPU sin ventana, código truncado y CRC. Total previsto 32 casos; no ejecutados sobre la versión final por bloqueo local, ni en Actions porque no se publicó este incremento. No confundir sintaxis/inventario comprobados con aceptación dinámica. PAINT_IMPORT.md registra el estado.
+
+Publicación autorizada por el usuario: se preparó además un paso independiente con los 36 casos de pintura antes bloqueados, usando el paquete extraído y PATH mínimo. La CI deberá ejecutar 32 casos generales y 36 de pintura; los modelos privados y reportes locales no se publican. Resultado pendiente al preparar esta subida.

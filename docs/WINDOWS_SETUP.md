@@ -1,6 +1,6 @@
 # Configuración Windows
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
+> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -83,3 +83,11 @@ Ejecutar `./scripts/bootstrap-manifold.ps1` antes del build, además de los boot
 ## Incremento 0.2.2 — 2026-11-08
 
 Sin cambios de dependencias: Qt 6.8.3, lib3mf 2.5.0 y Manifold 3.5.4. Mismos scripts/preset; EditHistory se compila en stlcut_core y la versión de CMake pasa a 0.2.2. Build y paquete locales satisfactorios; logs en HISTORY.md.
+
+## Seguimiento de cabeceras MSVC/Ninja 0.3.1
+
+Preset con VSLANG=1033; normalización del prefijo español /showIncludes cuando no está instalado el idioma inglés. Migración local una vez con configuración fresca y reconstrucción completa; marcador ignorado build/windows-x64-release/stlcut-deps-v1.txt. build-windows.ps1 comprueba la dependencia Mesh.h antes de aceptar el build y restaura VSLANG del proceso. No instala idiomas ni modifica variables persistentes. Diagnóstico y evidencia en COLOR_IMPORT.md.
+
+## miniz y bloqueo de ejecución 0.3.2
+
+Bootstrap explícito: ./scripts/bootstrap-miniz.ps1. Solo nueve archivos de producción verificados en build/deps/miniz-3.1.0; fuente fijada, sin instalación global. El build usa también el compilador C del mismo MSVC. La ejecución final fue bloqueada por Code Integrity (4551, eventos 3033/3077). No se modificó la política ni se sorteó el bloqueo. Se necesita validar en un entorno autorizado, como CI tras aprobación de publicación. PAINT_IMPORT.md.

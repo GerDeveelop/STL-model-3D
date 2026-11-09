@@ -4,6 +4,7 @@
 #include <cmath>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <set>
 #include <sstream>
 
@@ -77,7 +78,7 @@ Mesh read3mf(std::span<const unsigned char> data,std::stop_token stop) {
     case Lib3MF::eModelUnit::Meter: scale=1000; break;
     default: throw std::runtime_error("Unidad 3MF no admitida.");
     }
-    result.warnings.push_back("3MF: geometria en mm; materiales, colores y ajustes del laminador no se conservan. Las instancias se agrupan sin union booleana.");
+    result.warnings.push_back("3MF: geometria en mm; colores/materiales estandar conservados para la sesion. Pintura del laminador, texturas y ajustes no se interpretan. STL exportado no conserva color. Instancias sin union booleana.");
     // lib3mf v2.5.0 Include/Common/NMR_ErrorConst.h: tolerate vendor metadata/
     // attributes, but never silently accept geometry warnings or required extensions.
     std::set<unsigned> reportedWarnings;
@@ -86,25 +87,55 @@ Mesh read3mf(std::span<const unsigned char> data,std::stop_token stop) {
         Lib3MF_uint32 code{}; const auto warning=reader->GetWarning(i,code);
         if(code!=0x80B2 && code!=0x80A7)
             throw std::runtime_error("3MF no admitido: "+warning);
+        if(code==0x80A7)result.unsupportedAppearance=true;
         if(reportedWarnings.insert(code).second)
             result.warnings.push_back(std::to_string(code)+": "+warning);
     }
     std::set<unsigned> active;
     size_t instances=0;
+    std::uint32_t buildObject=0;
+    std::vector<std::uint32_t> objectHierarchy;
+    std::map<std::pair<unsigned,unsigned>,std::int32_t> palette;
+    auto material=[&](unsigned resource,unsigned property)->std::int32_t {
+        if(!resource)return -1;
+        const auto key=std::make_pair(resource,property);
+        if(const auto found=palette.find(key);found!=palette.end())return found->second;
+        const auto type=model->GetPropertyTypeByID(resource);
+        Lib3MF::sColor color{};std::string name;
+        if(type==Lib3MF::ePropertyType::BaseMaterial) {
+            const auto group=model->GetBaseMaterialGroupByID(resource);
+            color=group->GetDisplayColor(property);name=group->GetName(property);
+        } else if(type==Lib3MF::ePropertyType::Colors)color=model->GetColorGroupByID(resource)->GetColor(property);
+        else {result.unsupportedAppearance=true;return -1;}
+        if(name.size()>4096)throw std::runtime_error("Nombre de material 3MF supera 4096 bytes.");
+        if(result.materials.size()>=4096)throw std::runtime_error("3MF supera 4096 propiedades de color/material usadas.");
+        const auto index=static_cast<std::int32_t>(result.materials.size());
+        result.materials.push_back({resource,property,{color.m_Red,color.m_Green,color.m_Blue,color.m_Alpha},name});
+        palette.emplace(key,index);return index;
+    };
     std::function<void(Lib3MF::PObject,const Matrix&,unsigned)> visit;
     visit=[&](Lib3MF::PObject object,const Matrix& t,unsigned depth) {
         check(stop);
         if(depth>64||++instances>100000||!active.insert(object->GetUniqueResourceID()).second)
             throw std::runtime_error("3MF: ciclo o limite de componentes excedido.");
         const auto id=object->GetUniqueResourceID();
+        objectHierarchy.push_back(object->GetModelResourceID());
         if(object->IsMeshObject()) {
             const auto mesh=model->GetMeshObjectByID(id);
             const auto count=mesh->GetTriangleCount();
             if(count>maxTriangles-result.triangles.size()||mesh->GetVertexCount()>6000000)
                 throw std::runtime_error("3MF supera 2 millones de triangulos o 6 millones de vertices.");
             if(mesh->BeamLattice()->GetBeamCount()) throw std::runtime_error("3MF con beam lattice no admitido.");
+            const auto instance=static_cast<std::uint32_t>(instances);
+            auto objectName=mesh->GetName();
+            if(objectName.size()>4096)throw std::runtime_error("Nombre de objeto 3MF supera 4096 bytes.");
+            result.instances.push_back({instance,id,static_cast<std::uint32_t>(result.triangles.size()),count,std::move(objectName),
+                mesh->PackagePart()->GetPath(),mesh->GetModelResourceID(),buildObject,false,objectHierarchy});
+            Lib3MF_uint32 defaultResource{},defaultProperty{};
+            const bool hasDefault=mesh->GetObjectLevelProperty(defaultResource,defaultProperty);
             const double det=t[0][0]*(t[1][1]*t[2][2]-t[1][2]*t[2][1])-t[0][1]*(t[1][0]*t[2][2]-t[1][2]*t[2][0])+t[0][2]*(t[1][0]*t[2][1]-t[1][1]*t[2][0]);
             if(!std::isfinite(det)||std::abs(det)<1e-18) throw std::runtime_error("Transformacion 3MF singular.");
+            result.instances.back().reflected=det<0;
             for(unsigned i=0;i<count;++i) {
                 check(stop); Triangle tri; const auto indices=mesh->GetTriangle(i);
                 for(int j=0;j<3;++j) {
@@ -114,8 +145,16 @@ Mesh read3mf(std::span<const unsigned char> data,std::stop_token stop) {
                     for(int k=0;k<3;++k) p[k]=scale*(v.m_Coordinates[0]*t[0][k]+v.m_Coordinates[1]*t[1][k]+v.m_Coordinates[2]*t[2][k]+t[3][k]);
                     tri.vertices[j]={p[0],p[1],p[2]};
                 }
-                if(det<0)std::swap(tri.vertices[1],tri.vertices[2]);
+                Lib3MF::sTriangleProperties properties{};mesh->GetTriangleProperties(i,properties);
+                TriangleStyle style;style.instance=instance;
+                if(!properties.m_ResourceID&&hasDefault) {
+                    properties.m_ResourceID=defaultResource;
+                    for(auto& p:properties.m_PropertyIDs)p=defaultProperty;
+                }
+                for(int j=0;j<3;++j)style.material[j]=material(properties.m_ResourceID,properties.m_PropertyIDs[j]);
+                if(det<0) {std::swap(tri.vertices[1],tri.vertices[2]);std::swap(style.material[1],style.material[2]);}
                 result.triangles.push_back(tri);
+                result.styles.push_back(style);
             }
         } else if(object->IsComponentsObject()) {
             auto components=model->GetComponentsObjectByID(id);
@@ -125,9 +164,10 @@ Mesh read3mf(std::span<const unsigned char> data,std::stop_token stop) {
             }
         } else throw std::runtime_error("Tipo de objeto 3MF no admitido (solo mallas/componentes).");
         active.erase(id);
+        objectHierarchy.pop_back();
     };
     auto items=model->GetBuildItems();
-    while(items->MoveNext()) { auto item=items->GetCurrent(); visit(item->GetObjectResource(),matrix(item->GetObjectTransform()),0); }
+    while(items->MoveNext()) { auto item=items->GetCurrent();buildObject=item->GetObjectResource()->GetModelResourceID();visit(item->GetObjectResource(),matrix(item->GetObjectTransform()),0); }
     updateBounds(result); return result;
 }
 }

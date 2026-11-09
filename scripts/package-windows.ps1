@@ -115,6 +115,10 @@ No requiere el kit Qt en PATH; incluye sus DLL/plugins y runtime MSVC local.
 Requiere Windows 10/11 x64 y controlador OpenGL 3.3 compatible para el visor.
 Incluye importación STL/3MF, corte por plano con límites documentados y exportación STL.
 Permite cortar piezas resultantes y Deshacer/Rehacer (Ctrl+Z/Ctrl+Y) durante la sesión.
+Conserva colores/materiales 3MF estándar; separa regiones que ya forman sólidos cerrados.
+Pin/cavidad opcionales al cortar o separar dos regiones con contacto plano en ejes.
+Lee pintura paint_color/mmu_segmentation como regiones superficiales y conserva la malla fuente.
+Los modos volumétricos de insertos/partición y contactos generales todavía no están implementados.
 Historial: hasta 32 pasos y 256 piezas, presupuesto de 1 GiB de geometría/vistas;
 puede retirar pasos antiguos y lo informa. No guarda proyectos/historial al cerrar.
 No incluye IA, instalador final, actualizador ni firma digital.
@@ -140,6 +144,7 @@ No se afirma validación en otro PC ni Windows limpio.
         qt_version=$qtVersion; msvc_runtime_version=$crtVersion;
         lib3mf_version='2.5.0';
         manifold_version='3.5.4'; manifold_linkage='static';
+        miniz_version='3.1.0'; miniz_linkage='static-read-only';
         validation_scope=$validationScope;
         manifest_excludes_itself=$true; files=$files}
     Write-Utf8 (Join-Path $portable 'manifest.json') ($manifest | ConvertTo-Json -Depth 8)

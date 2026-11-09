@@ -69,3 +69,7 @@ Pendientes: corroboración visual independiente del paneo asistido, archivo real
 ## Corte Manifold 0.2.1 — 2026-11-08
 
 Una ejecución CLI Release con 1 929 612 triángulos (cubo subdividido generado en memoria), Manifold 3.5.4 en modo serial: 13.3604 s desde inicio del proceso hasta STL stdout, pico RSS 1350.70 MiB y commit 1363.88 MiB, 445 muestras mediante GetProcessMemoryInfo aproximadamente cada 20 ms. Incluye recepción/análisis, adaptación, corte/consolidación/validación y exportación; no la generación Python previa ni GUI/GPU. El resultado positivo se consolida a 12 triángulos y volumen 0.5: caso plano favorable, no representativo de cualquier malla compleja. El presupuesto de 512 MiB del adaptador no es una cuota de RAM del proceso. Reporte build/manifold-performance.json y contrato en MANIFOLD_CUT.md. No se hicieron repeticiones estadísticas ni se garantiza tiempo/memoria máximos.
+
+## Modelos reales 0.2.2
+
+Medidas CLI de seis modelos existentes, entre 24 y 778 560 triángulos. Cinco primeros cortes completados entre 0.1619 y 28.7372 s; cinco secuencias de dos cortes/historial/tres serializaciones entre 0.1427 y 42.4764 s. Mayor pico RSS observado: 667.64 MiB en el primer corte de R6. Son procesos y operaciones distintos, medidos una vez; no se compara su velocidad relativa ni se garantizan máximos. Tabla, entorno, fronteras de medición y fallo float32 detectado en [REAL_MODEL_VALIDATION.md](REAL_MODEL_VALIDATION.md).

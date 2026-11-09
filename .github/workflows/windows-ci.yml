@@ -53,6 +53,9 @@ jobs:
       - name: Download and verify Manifold 3.5.4
         run: ./scripts/bootstrap-manifold.ps1
 
+      - name: Download and verify miniz 3.1.0
+        run: ./scripts/bootstrap-miniz.ps1
+
       - name: Build and package Release x64
         run: |
           $ErrorActionPreference = 'Stop'
@@ -255,6 +258,95 @@ jobs:
           limited=edit([first,second],{'pieces':2},False)
           assert [p['id'] for p in limited['current']['pieces']] == [2,3] and limited['current']['undo'] == 1
           outcomes.append({'case':'history-active-piece-limit','passed':True})
+          translated=binary_mesh([(x+1000000,y,z) for x,y,z in vertices],faces)
+          thin={'op':'cut','normal':[1,0,0],'offset':1000000.01}
+          unsafe=subprocess.run([str(exe),'--edit-stdin',json.dumps({'commands':[thin,{'op':'export','piece':3}]})],input=translated,capture_output=True,env=env,timeout=30)
+          rejected=json.loads(unsafe.stdout)
+          assert unsafe.returncode == 1 and not rejected['ok'] and 'float32' in rejected['error'],rejected
+          assert rejected['exports'] == [] and [p['id'] for p in rejected['current']['pieces']] == [2,3]
+          assert rejected['current']['undo'] == 1
+          outcomes.append({'case':'export-invalid-float32-retains-session','passed':True})
+          unsafe=subprocess.run([str(exe),'--cut-stdin','1','0','0','1000000.01','negative'],input=translated,capture_output=True,env=env,timeout=30)
+          assert unsafe.returncode == 1 and unsafe.stdout == b'' and b'float32' in unsafe.stderr,unsafe.stderr
+          outcomes.append({'case':'cut-invalid-float32-no-output','passed':True})
+          spec={'diameter':3,'depth':4,'clearance':.2,'wall':1}
+          connected=edit([{**first,'connector':spec},{'op':'undo'},{'op':'redo'},{'op':'export','piece':2},{'op':'export','piece':3}])
+          assert connected['states'][1]['pieces'] == connected['states'][3]['pieces']
+          area=lambda radius:32*radius*radius*math.sin(2*math.pi/64)
+          assert math.isclose(connected['current']['pieces'][0]['signed_volume'],3000+area(1.5)*4,rel_tol=1e-7)
+          assert math.isclose(connected['current']['pieces'][1]['signed_volume'],3000-area(1.6)*4.1,rel_tol=1e-7)
+          outcomes.append({'case':'connector-dimensions-export-undo-redo','passed':True})
+          rejected=edit([{**first,'connector':{**spec,'diameter':9}}],valid=False)
+          assert [p['id'] for p in rejected['current']['pieces']] == [1] and rejected['current']['undo'] == 0
+          outcomes.append({'case':'connector-insufficient-wall-retains-session','passed':True})
+          def colored_3mf(paint=False):
+              with zipfile.ZipFile(io.BytesIO(make_3mf())) as source:
+                  entries={name:source.read(name) for name in source.namelist()}
+              xml=entries['3D/3dmodel.model'].decode()
+              original=xml[xml.index('<object '):xml.index('</object>')+9]
+              red=original.replace('type="model"','type="model" pid="100" pindex="0"')
+              blue=original.replace('id="1"','id="2"',1).replace('type="model"','type="model" pid="100" pindex="1"')
+              palette='<basematerials id="100"><base name="Red" displaycolor="#FF0000FF"/><base name="Blue" displaycolor="#0000FFFF"/></basematerials>'
+              xml=xml.replace(original,palette+red+blue).replace('<item objectid="1"/>','<item objectid="1"/><item objectid="2" transform="1 0 0 0 1 0 0 0 1 10 0 0"/>')
+              if paint: xml=xml.replace('<triangle ','<triangle paint_color="8" ')
+              entries['3D/3dmodel.model']=xml.encode()
+              output=io.BytesIO()
+              with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as target:
+                  for name,data in entries.items(): target.writestr(name,data)
+              return output.getvalue()
+          def material_edit(commands,valid=True,paint=False):
+              process=subprocess.run([str(exe),'--edit-stdin',json.dumps({'commands':commands})],input=colored_3mf(paint),capture_output=True,env=env,timeout=30)
+              result=json.loads(process.stdout)
+              assert result['ok'] == valid and process.returncode == (0 if valid else 1),result
+              return result
+          split={'op':'split-materials'}
+          separated=material_edit([split,{'op':'undo'},{'op':'redo'},{'op':'export','piece':2},{'op':'export','piece':3}])
+          assert separated['states'][1]['pieces'] == separated['states'][3]['pieces']
+          assert [p['materials'][0]['rgba'] for p in separated['current']['pieces']] == [[255,0,0,255],[0,0,255,255]]
+          assert all(p['signed_volume'] == 6000 for p in separated['current']['pieces'])
+          outcomes.append({'case':'material-split-colors-history-export','passed':True})
+          linked=material_edit([{**split,'connector':spec},{'op':'export','piece':2},{'op':'export','piece':3}])
+          assert all(p['format'] == '3mf-material-connected' for p in linked['current']['pieces'])
+          assert math.isclose(linked['current']['pieces'][0]['signed_volume'],6000+area(1.5)*4,rel_tol=1e-7)
+          assert math.isclose(linked['current']['pieces'][1]['signed_volume'],6000-area(1.6)*4.1,rel_tol=1e-7)
+          outcomes.append({'case':'material-planar-automatic-connectors','passed':True})
+          rejected=material_edit([split],False,True)
+          assert rejected['current']['undo'] == 0 and len(rejected['current']['pieces']) == 1
+          outcomes.append({'case':'uninterpreted-paint-no-false-split','passed':True})
+          def painted_3mf(code='841'):
+              with zipfile.ZipFile(io.BytesIO(colored_3mf())) as source:
+                  entries={name:source.read(name) for name in source.namelist()}
+              xml=entries['3D/3dmodel.model'].decode().replace('<triangle ','<triangle paint_color="'+code+'" ',1)
+              entries['3D/3dmodel.model']=xml.encode()
+              entries['Metadata/project_settings.config']=json.dumps({'filament_colour':['#FF0000','#0000FF']}).encode()
+              entries['Metadata/model_settings.config']=b'<config><object id="1"><metadata key="extruder" value="1"/></object><object id="2"><metadata key="extruder" value="2"/></object></config>'
+              output=io.BytesIO()
+              with zipfile.ZipFile(output,'w',zipfile.ZIP_STORED) as target:
+                  for name,data in entries.items():target.writestr(name,data)
+              return output.getvalue()
+          decoded=subprocess.run([str(exe),'--decode-paint','841'],capture_output=True,env=env,timeout=20)
+          info=json.loads(decoded.stdout)
+          assert decoded.returncode == 0 and info['leaf_count'] == 2
+          assert info['filament_fractions'] == [{'filament':1,'fraction':.5},{'filament':2,'fraction':.5}]
+          outcomes.append({'case':'paint-code-subdivision-area','passed':True})
+          painted=subprocess.run([str(exe),'--inspect-view-stdin'],input=painted_3mf(),capture_output=True,env=env,timeout=20)
+          info=json.loads(painted.stdout)
+          assert painted.returncode == 0 and info['triangles'] == 24 and info['signed_volume'] == 12000
+          assert info['painted_triangles'] == 1 and info['paint_facets'] == 2 and info['unresolved_paint_facets'] == 0
+          assert info['view_vertices'] == 75 and {tuple(c['rgb']) for c in info['view_colors']} == {(255,0,0),(0,0,255)}
+          outcomes.append({'case':'paint-import-cpu-view-source-preserved','passed':True})
+          bad=subprocess.run([str(exe),'--inspect-stdin'],input=painted_3mf('C'),capture_output=True,env=env,timeout=20)
+          info=json.loads(bad.stdout)
+          assert bad.returncode == 1 and not info['ok'] and 'truncado' in info['error']
+          outcomes.append({'case':'paint-truncated-code-rejected','passed':True})
+          corrupt=bytearray(painted_3mf())
+          with zipfile.ZipFile(io.BytesIO(corrupt)) as package:entry=package.getinfo('Metadata/project_settings.config')
+          offset=entry.header_offset+30+len(entry.filename.encode())+len(entry.extra)
+          corrupt[offset+1]^=1
+          bad=subprocess.run([str(exe),'--inspect-stdin'],input=corrupt,capture_output=True,env=env,timeout=20)
+          info=json.loads(bad.stdout)
+          assert bad.returncode == 1 and not info['ok'] and 'CRC' in info['error']
+          outcomes.append({'case':'paint-metadata-crc-rejected','passed':True})
           report = {'archive': archive.name, 'sha256': digest, 'manifest_files': len(manifest['files']),
                     'cases': outcomes, 'path': env['PATH'], 'gui_tested': False, 'clean_windows_tested': False}
           (root / 'build/ci-verification.json').write_text(json.dumps(report,indent=2),encoding='utf8')
@@ -264,6 +356,229 @@ jobs:
               'manifest_files': len(manifest['files'])}))
           '@ | python -
           if ($LASTEXITCODE -ne 0) { throw 'Package verification failed' }
+
+      - name: Verify paint decoding and inheritance in memory
+        run: |
+          @'
+
+          import io,zipfile,struct,subprocess,json,os,math,hashlib,pathlib
+          root=pathlib.Path.cwd()
+          exe=str(next((root/'build'/('portable '+chr(241))).glob('*/STLCutStudioAI.exe')))
+          env={k:v for k,v in os.environ.items() if not k.upper().startswith(('QT','QML','STL_QT_ROOT','CMAKE_PREFIX_PATH'))}
+          env['PATH']=str(pathlib.Path(env['SYSTEMROOT'])/'System32')+';'+env['SYSTEMROOT']
+          results=[]
+          def invoke(args,data):
+              return subprocess.run([exe,*args],input=data,capture_output=True,env=env,timeout=40)
+          def inspect(data):
+              p=invoke(['--inspect-stdin'],data)
+              return p,json.loads(p.stdout)
+          def check(name,fn):
+              try:
+                  detail=fn()
+                  results.append(dict(name=name,ok=True,detail=detail))
+              except Exception as e:
+                  results.append(dict(name=name,ok=False,error=str(e)))
+          def expect(data,ok=True,count=None,dims=None,minimum=None):
+              p,j=inspect(data)
+              assert (p.returncode==0)==ok,(p.returncode,j,p.stderr.decode(errors='replace'))
+              if ok:
+                  if count is not None: assert j['triangles']==count,j
+                  if dims: assert all(math.isclose(a,b,rel_tol=2e-6,abs_tol=1e-6) for a,b in zip(j['dimensions'],dims)),j
+                  if minimum: assert all(math.isclose(a,b,rel_tol=2e-6,abs_tol=1e-6) for a,b in zip(j['min'],minimum)),j
+              return j
+          verts=[(0,0,0),(1,0,0),(1,1,0),(0,1,0),(0,0,1),(1,0,1),(1,1,1),(0,1,1)]
+          faces=[(0,2,1),(0,3,2),(4,5,6),(4,6,7),(0,1,5),(0,5,4),(1,2,6),(1,6,5),(2,3,7),(2,7,6),(3,0,4),(3,4,7)]
+          def stl(v=verts,f=faces):
+              return b'Generated in memory'.ljust(80,b'\0')+struct.pack('<I',len(f))+b''.join(struct.pack('<12fH',0,0,0,*[c for i in t for c in v[i]],0) for t in f)
+          cube=stl()
+
+          def color_model(mode='base',same=False,combined=False,paint=False,partial=False,reflect=False):
+           materials=('<basematerials id="1"><base name="Red" displaycolor="#FF0000FF"/><base name="Blue" displaycolor="'+('#FF0000FF' if same else '#0000FFFF')+'"/></basematerials>' if mode=='base' else '<m:colorgroup id="1"><m:color color="#FF0000FF"/><m:color color="#0000FFFF"/></m:colorgroup>')
+           def obj(oid,offset,color,append=False):
+            vv=[(20*x+offset,20*y,20*z) for x,y,z in verts]
+            ff=list(faces)
+            if append:vv += [(20*x+offset+40,20*y,20*z) for x,y,z in verts];ff += [tuple(i+8 for i in f) for f in faces]
+            vs=''.join(f'<vertex x="{x}" y="{y}" z="{z}"/>' for x,y,z in vv)
+            ts=''.join(f'<triangle v1="{a}" v2="{b}" v3="{c}" '+('paint_color="8" ' if paint else '')+('pid="1" p1="0" p2="1" p3="0" ' if partial and i==0 else '')+'/>' for i,(a,b,c) in enumerate(ff))
+            return f'<object id="{oid}" type="model" name="Body {oid}" pid="1" pindex="{color}"><mesh><vertices>{vs}</vertices><triangles>{ts}</triangles></mesh></object>'
+           objs=obj(10,0,0,combined)
+           if not combined:objs+=obj(11,20,1)
+           items=('<item objectid="10" transform="-1 0 0 0 1 0 0 0 1 20 0 0"/>' if reflect else '<item objectid="10"/>')+('' if combined else '<item objectid="11"/>')
+           xml=f'<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02" '+('requiredextensions="m"' if mode!='base' else '')+f'><resources>{materials}{objs}</resources><build>{items}</build></model>'
+           b=io.BytesIO()
+           with zipfile.ZipFile(b,'w',zipfile.ZIP_DEFLATED) as z:
+            z.writestr('[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>')
+            z.writestr('_rels/.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>')
+            z.writestr('3D/3dmodel.model',xml)
+           return b.getvalue()
+          def edit(data,commands,valid=True,limits=None):
+           req={'commands':commands}
+           if limits:req['limits']=limits
+           p=invoke(['--edit-stdin',json.dumps(req)],data);j=json.loads(p.stdout)
+           assert j['ok']==valid and p.returncode==(0 if valid else 1),j
+           return j
+
+          import base64,collections,random,re
+          def mutate_zip(data,change=None,extras=None,compression=zipfile.ZIP_DEFLATED):
+           b=io.BytesIO()
+           with zipfile.ZipFile(io.BytesIO(data)) as source,zipfile.ZipFile(b,'w',compression) as target:
+            for name in source.namelist():
+             if name in (extras or {}):continue
+             content=source.read(name)
+             if name=='3D/3dmodel.model' and change:content=change(content.decode()).encode()
+             target.writestr(name,content)
+            for name,content in (extras or {}).items():target.writestr(name,content)
+           return b.getvalue()
+          def paint_model(code='841',reflect=False,palette=True,default=True,external=False,nested=False,metadata=None,paint_all=False,double_faces=False):
+           data=color_model(combined=True,reflect=reflect)
+           def change(s):
+            if double_faces:
+             body=s[s.index('<triangles>')+11:s.index('</triangles>')]
+             s=s.replace(body,body*(2 if double_faces is True else int(double_faces)))
+            return s.replace('<triangle ','<triangle paint_color="'+code+'" ', -1 if paint_all else 1)
+           data=mutate_zip(data,change)
+           extras={}
+           if palette:extras['Metadata/project_settings.config']=json.dumps({'filament_colour':['#FF0000','#0000FF']})
+           if default:extras['Metadata/model_settings.config']=metadata or '<config><object id="'+('30' if external else '10')+'"><metadata key="extruder" value="1"/></object></config>'
+           if external:
+            with zipfile.ZipFile(io.BytesIO(data)) as z:body=z.read('3D/3dmodel.model').decode()
+            if nested:
+             body=body.replace('</resources>','<object id="20" type="model"><components><component objectid="10"/></components></object></resources>')
+            target_id='20' if nested else '10'
+            root_xml='<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" requiredextensions="p"><resources><object id="30" type="model"><components><component objectid="'+target_id+'" p:path="/3D/Objects/body.model"/></components></object></resources><build><item objectid="30"/></build></model>'
+            def uuids(xml,seed):
+             if 'xmlns:p=' not in xml:xml=xml.replace('<model ','<model xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" ',1)
+             xml=re.sub(r'<object id="(\d+)"',lambda m:'<object id="'+m[1]+'" p:UUID="'+format(seed+int(m[1]),'08x')+'-0000-4000-8000-000000000000"',xml)
+             xml=xml.replace('<build>','<build p:UUID="'+format(seed+100,'08x')+'-0000-4000-8000-000000000000">')
+             xml=xml.replace('<item ','<item p:UUID="'+format(seed+101,'08x')+'-0000-4000-8000-000000000000" ')
+             xml=xml.replace('<component ','<component p:UUID="'+format(seed+102,'08x')+'-0000-4000-8000-000000000000" ')
+             return xml
+            body=uuids(body,1000);root_xml=uuids(root_xml,2000)
+            data=mutate_zip(data,lambda _:root_xml,{'3D/Objects/body.model':body,'3D/_rels/3dmodel.model.rels':'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/Objects/body.model" Id="body" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>'})
+           return mutate_zip(data,extras=extras)
+          def decoded(code,valid=True):
+           p=invoke(['--decode-paint',code],b'');j=json.loads(p.stdout)
+           assert j['ok']==valid and p.returncode==(0 if valid else 1),j
+           return j
+          def painted(data,view=False,valid=True):
+           p=invoke(['--inspect-view-stdin' if view else '--inspect-stdin'],data);j=json.loads(p.stdout)
+           assert j['ok']==valid and p.returncode==(0 if valid else 1),j
+           return j
+          def leaf_code(state):
+           if state<3:return format(4*state,'X')
+           n=state-3;low=['C']
+           while n>=15:low.append('F');n-=15
+           low.append(format(n,'X'));return ''.join(reversed(low))
+          for value in (0,1,2,3,17,18,32,4096):
+           def leaf(value=value):
+            j=decoded(leaf_code(value));assert j['leaf_count']==1 and j['filament_fractions']==[{'filament':value,'fraction':1}]
+           check('leaf_state_'+str(value),leaf)
+          for code in ('G',' ','C','04','7','D','1','FC',leaf_code(4097)):
+           check('invalid_code_'+repr(code),lambda code=code:decoded(code,False))
+          def empty():
+           j=decoded('');assert j['leaf_count']==1 and j['leaves'][0]['filament']==0
+          check('empty_inherits',empty)
+          def split_geometry():
+           for split in (1,2,3):
+            for side in (range(3) if split<3 else range(1)):
+             n=split+1;code=''.join(leaf_code(i+1) for i in range(n))+format(side*4+split,'X')
+             j=decoded(code);assert j['leaf_count']==n
+             area=0
+             for leaf in j['leaves']:
+              a,b,c=leaf['barycentric'];signed=(b[1]-a[1])*(c[2]-a[2])-(b[2]-a[2])*(c[1]-a[1])
+              assert signed>0;area+=signed
+              assert all(all(0<=x<=1 for x in p) and math.isclose(sum(p),1) for p in (a,b,c))
+             assert math.isclose(area,1,abs_tol=1e-12)
+           return {'subdivision_patterns':7}
+          check('seven_subdivision_patterns_area_orientation',split_geometry)
+          def random_coverage():
+           rng=random.Random(37)
+           for case in range(80):
+            expected=collections.defaultdict(float);leaves=[0]
+            def tree(depth,area):
+             if depth==3 or (depth and rng.random()<.65):
+              state=rng.randrange(19);expected[state]+=area;leaves[0]+=1;return leaf_code(state)
+             split=rng.randrange(1,4);side=rng.randrange(3) if split<3 else 0
+             weights={1:[.5,.5],2:[.25,.25,.5],3:[.25]*4}[split]
+             children=[tree(depth+1,area*w) for w in weights]
+             # Hex string stores child 0 at the left, root descriptor at the right.
+             return ''.join(children)+format(side*4+split,'X')
+            code=tree(0,1);j=decoded(code);assert j['leaf_count']==leaves[0]
+            actual={x['filament']:x['fraction'] for x in j['filament_fractions']}
+            assert actual.keys()==expected.keys() and all(math.isclose(actual[k],v,abs_tol=1e-12) for k,v in expected.items())
+           return {'trees':80}
+          check('random_tree_filament_area_conservation',random_coverage)
+          def depth():
+           code='4'
+           for _ in range(21):code='4'+code+'1'
+           decoded(code,False)
+          check('depth_limit',depth)
+          def original_geometry():
+           j=painted(paint_model(),True);assert j['triangles']==24 and j['signed_volume']==16000 and j['painted_triangles']==1 and j['paint_facets']==2
+           assert j['unresolved_paint_facets']==0 and j['view_vertices']==75
+           assert {tuple(x['rgb']) for x in j['view_colors']}=={(255,0,0),(0,0,255)}
+          check('paint_import_cpu_view_original_unchanged',original_geometry)
+          def reflected():
+           normal=painted(paint_model('48443'),True);flipped=painted(paint_model('48443',reflect=True),True)
+           a=next(x for x in normal['view_colors'] if x['rgb']==[0,0,255]);b=next(x for x in flipped['view_colors'] if x['rgb']==[0,0,255])
+           assert math.isclose(a['min'][0],-2/3,abs_tol=1e-6) and math.isclose(a['max'][0],-1/3,abs_tol=1e-6),(a,b)
+           assert math.isclose(b['min'][0],1/3,abs_tol=1e-6) and math.isclose(b['max'][0],2/3,abs_tol=1e-6),(a,b)
+           assert normal['signed_volume']==flipped['signed_volume']==16000
+          check('reflection_keeps_paint_location',reflected)
+          check('external_model_paint_object_binding',lambda:painted(paint_model(external=True),True))
+          def inherited():
+           metadata='<config><object id="30"><metadata key="extruder" value="1"/><part id="20"><metadata key="extruder" value="2"/></part></object></config>'
+           j=painted(paint_model('0',external=True,nested=True,metadata=metadata),True)
+           assert j['unresolved_paint_facets']==0 and [x['rgb'] for x in j['view_colors']]==[[0,0,255]]
+          check('nested_part_overrides_object_default',inherited)
+          def missing_palette():
+           j=painted(paint_model(palette=False),True);assert j['unresolved_paint_facets']==2
+           assert [128,128,128] in [x['rgb'] for x in j['view_colors']]
+          check('missing_palette_is_unresolved_not_invented',missing_palette)
+          def ambiguous():
+           metadata='<config><object id="30"><part id="20"><metadata key="extruder" value="2"/></part><part id="10"><metadata key="extruder" value="1"/></part></object></config>'
+           j=painted(paint_model('0',external=True,nested=True,metadata=metadata));assert j['unresolved_paint_facets']==1
+          check('ambiguous_hierarchy_is_unresolved',ambiguous)
+          check('bad_paint_import_rejected',lambda:painted(paint_model('C'),valid=False))
+          def not_solid():
+           j=edit(paint_model(),[{'op':'split-materials'}],False);assert j['current']['undo']==0 and len(j['current']['pieces'])==1
+          check('paint_not_reported_as_closed_pieces',not_solid)
+          def full_tree(depth):
+           if depth==0:return '4'
+           child=full_tree(depth-1);return child*4+'3'
+          def leaf_limit():
+           code=full_tree(8)
+           p=invoke(['--decode-paint-stdin'],code.encode());j=json.loads(p.stdout);assert p.returncode==0 and j['leaf_count']==65536
+           p=invoke(['--decode-paint-stdin'],(code+'4443').encode());j=json.loads(p.stdout);assert p.returncode==1 and '65536' in j['error']
+          check('per_face_leaf_budget_boundary',leaf_limit)
+          check('code_length_limit',lambda:painted(paint_model('4'*262145),valid=False))
+          def expanded_budget():
+           j=painted(paint_model(full_tree(7),paint_all=True,double_faces=6),valid=False);assert '2 millones' in j['error'],j
+          check('global_expanded_face_limit',expanded_budget)
+          def metadata_limit():
+           data=mutate_zip(paint_model(),extras={'Metadata/project_settings.config':' '* (4*1024*1024+1)})
+           j=painted(data,valid=False);assert '4 MiB' in j['error'],j
+          check('metadata_4mib_limit',metadata_limit)
+          def crc():
+           data=mutate_zip(paint_model(),compression=zipfile.ZIP_STORED)
+           with zipfile.ZipFile(io.BytesIO(data)) as z:info=z.getinfo('Metadata/project_settings.config')
+           offset=info.header_offset+30+len(info.filename.encode())+len(info.extra)
+           data=bytearray(data);data[offset+1]^=1;j=painted(bytes(data),valid=False);assert 'CRC' in j['error'],j
+          check('metadata_crc_rejected',crc)
+          def dtd():
+           data=mutate_zip(paint_model(),extras={'Metadata/model_settings.config':'<!DOCTYPE config [<!ENTITY x SYSTEM "file:///missing">]><config/>'})
+           j=painted(data,valid=False);assert 'DTD' in j['error'],j
+          check('dtd_metadata_rejected',dtd)
+          def unsafe_path():
+           data=mutate_zip(paint_model(),extras={'../ignored.txt':'x'})
+           j=painted(data,valid=False);assert 'Ruta ZIP' in j['error'],j
+          check('ambiguous_archive_path_rejected',unsafe_path)
+          (root/'build/ci-paint-verification.json').write_text(json.dumps({'passed':sum(x['ok'] for x in results),'total':len(results),'cases':results},indent=2))
+          print(json.dumps({'passed':sum(x['ok'] for x in results),'total':len(results),'failed':[x for x in results if not x['ok']]}))
+          assert all(x['ok'] for x in results)
+
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { throw 'Paint verification failed' }
 
       - name: Upload package and evidence
         if: always()

@@ -1,7 +1,7 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
-**Versión del documento:** 1.4
-**Estado:** versión de desarrollo 0.2.2 con STL/3MF, corte Manifold, cortes encadenados y Deshacer/Rehacer durante la sesión. Release y validaciones locales satisfactorios: 22 casos de historial, 63 de geometría/importación y 21 del paquete. Uso y límites en [HISTORY.md](HISTORY.md). Código publicado en main como 34b0cb7; CI Windows 0.2.2 satisfactoria (ejecución 6: build, paquete y 21 casos), con evidencia en [CI.md](CI.md). La fase 0.2 continúa y el instalador final corresponde a 1.0.
+**Versión del documento:** 1.5
+**Estado:** versión local 0.3.2 en validación: lectura de pintura y miniz 3.1.0 autorizada, compilación/paquete completados. Hubo evidencia preliminar de pintura sobre un modelo real, pero Windows bloqueó la ejecución final (4551); batería y regresiones finales pendientes. Detalles en [PAINT_IMPORT.md](PAINT_IMPORT.md). Insertos y partición volumétrica siguen pendientes. Sin revisión visual; publicación autorizada para validar en CI, aún pendiente de resultado. Última CI remota verificada 0.2.2.
 **Plataforma:** Windows 10/11 x64  
 **IDE:** Visual Studio Code + Codex  
 **Objetivo:** aplicación local instalable para importar, reparar, cortar y exportar mallas 3D; posteriormente generar modelos a partir de imágenes y texto.
@@ -19,7 +19,7 @@ STL Cut Studio AI permite:
 1. Importar STL y 3MF (incorporado en fase 0.2); OBJ en una etapa posterior.
 2. Visualizar, medir, rotar y transformar modelos 3D.
 3. Cortar por planos horizontal, vertical, oblicuo o arbitrario; obtener componentes separados y cerrar superficies cuando la geometría lo permita.
-4. Generar conectores y cavidades con tolerancias configurables.
+4. Generar conectores y cavidades con tolerancias configurables. Ampliación aprobada: separar 3MF por color/material y conectar las regiones vecinas; diseño en [PHASE_03.md](PHASE_03.md), todavía sin implementación.
 5. Detectar defectos y reparar mallas con previsualización y operaciones reversibles.
 6. Generar mallas desde una o varias imágenes mediante modelos de IA compatibles.
 7. Generar geometría paramétrica desde instrucciones mediante OpenSCAD/Blender y un LLM opcional.
@@ -244,7 +244,7 @@ No publicar versión 1.0 sin validar el instalador `.exe` y la aplicación insta
 |---|---|---|
 | 0.1 | Ventana Qt, STL, visor, CI y ZIP provisional | Compilación local y CI satisfactorias, funciones verificadas y paquete con runtime comprobado; sin segundo PC ni VM obligatoria en esta fase |
 | 0.2 | Importación 3MF, corte por plano, exportación STL e historial de sesión | Unidades/transformaciones correctas, límites explícitos, volumen y reimportación comprobados |
-| 0.3 | Conectores, validación y reparación | Fixtures y tolerancias verificadas |
+| 0.3 | Conectores, separación por color, validación y reparación | Fixtures y tolerancias verificadas |
 | 0.4 | Imagen→3D con adaptador IA | Generación + validación de malla |
 | 0.5 | Texto→3D y asistente | Operaciones verificables y seguras |
 | 1.0 | Instalador `.exe`, actualizador y documentación | Instalación, ejecución y desinstalación verificadas en VM Windows limpia, sin preparación manual de dependencias |

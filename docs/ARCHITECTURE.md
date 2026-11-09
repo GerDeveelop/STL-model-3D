@@ -1,6 +1,6 @@
 # Arquitectura y decisiones
 
-> Estado vigente 0.2.2: cortes encadenados sobre piezas activas y Deshacer/Rehacer de sesión, con geometría compartida y presupuesto de historial. Uso, límites y evidencia local en [HISTORY.md](HISTORY.md). Se conserva Manifold 3.5.4. CI remota 0.2.2 satisfactoria en 34b0cb7 (ejecución 6); las secciones anteriores por versión son históricas.
+> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -61,3 +61,21 @@ PlaneCut conserva su API. Indexa/verifica la malla, normaliza coordenadas, usa M
 ## Historial de sesión 0.2.2
 
 `core/projects/EditHistory` es independiente de Qt: estados con piezas activas, selección y plano. Mallas/vistas compartidas evitan duplicar geometría entre pasos. Recorta los estados más antiguos dentro de 32 cortes y 1 GiB contabilizado; máximo 256 piezas activas. Rechazar un estado que no cabe conserva también Rehacer. El original permanece fijado. No se persiste la sesión ni se incluye la cámara en el historial. Contrato completo y CLI de edición en [HISTORY.md](HISTORY.md).
+
+## Exportación compartida 0.2.3
+
+StlWriter::validatedStl agrupa serialización, reimportación, precisión, cierre y volumen sin Qt. Interfaz y ambos CLI reciben bytes solo tras validarlos; la interfaz conserva QSaveFile. Contrato y evidencia en EXPORT_VALIDATION.md.
+
+## Diseño inicial de fase 0.3
+
+Preservar identidad de objetos/materiales/colores antes de aplanar instancias; ampliar metadatos de sesión y transacciones de múltiples piezas. Separación volumétrica y conectores permanecen en el núcleo, sin Qt ni IA. El usuario eligió ambos modos volumétricos para pintura superficial; [PHASE_03.md](PHASE_03.md). La importación por color y reconstrucción volumétrica siguen sin implementación.
+
+Primer incremento 0.3.0: PlaneCut recibe ConnectorSpec opcional, genera pin/cavidad y valida guardas/volúmenes antes de publicar. EditState conserva parámetros y activación junto a plano/selección. Interfaz/CLI reutilizan el motor; PHASE_03.md fija límites y evidencia.
+
+## Metadatos y regiones 0.3.1
+
+Mesh conserva Material, TriangleStyle y SourceInstance. MeshReader resuelve propiedades estándar con lib3mf; ColorSplit agrupa conectividad/material y verifica sólidos. EditHistory::commitSplit prepara un estado candidato de múltiples resultados, con IDs/procedencia y presupuesto de metadatos. Las vistas CPU incluyen RGB por vértice; aplicación por trabajador/caché sin modificar fuentes. El núcleo sigue sin Qt. Contrato de conectores y pintura no interpretada en COLOR_IMPORT.md.
+
+## Adaptación de pintura 0.3.2
+
+ZipParts/miniz y PaintCodec son C/C++ sin Qt; ModelImport usa el XML/JSON de Qt en la aplicación y asocia partes/objetos/jerarquías. Mesh separa PaintFacet baricéntrico de Triangle geométrico; el historial contabiliza ambos. Presentación CPU usa las regiones sin subdividir la malla fuente. Base compilada, validación final bloqueada según PAINT_IMPORT.md.
