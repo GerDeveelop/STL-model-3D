@@ -1,7 +1,7 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
 **Versión del documento:** 1.5
-**Estado:** versión local 0.3.2 en validación: lectura de pintura y miniz 3.1.0 autorizada, compilación/paquete completados. Hubo evidencia preliminar de pintura sobre un modelo real, pero Windows bloqueó la ejecución final (4551); batería y regresiones finales pendientes. Detalles en [PAINT_IMPORT.md](PAINT_IMPORT.md). Insertos y partición volumétrica siguen pendientes. Sin revisión visual; publicación autorizada para validar en CI, aún pendiente de resultado. Última CI remota verificada 0.2.2.
+**Estado:** versión 0.3.2 publicada en main (d2a219a): lectura de pintura 3MF, colores/regiones y conectores del alcance documentado. CI Windows ejecución 7 satisfactoria: build, paquete, 32 comprobaciones generales y 36 de pintura. Evidencia en [CI.md](CI.md). El bloqueo local 4551 permanece; no se modificó la protección ni se hizo revisión visual. Insertos y partición volumétrica siguen pendientes.
 **Plataforma:** Windows 10/11 x64  
 **IDE:** Visual Studio Code + Codex  
 **Objetivo:** aplicación local instalable para importar, reparar, cortar y exportar mallas 3D; posteriormente generar modelos a partir de imágenes y texto.

@@ -1,6 +1,6 @@
 # CI Windows x64
 
-> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
+> Estado 0.3.2 publicado y validado en CI Windows: ejecución 7, commit d2a219a, build/paquete y 32 casos generales + 36 de pintura correctos. El bloqueo local 4551 no se ha cambiado; sin revisión visual. Insertos/partición volumétrica pendientes. Evidencia en [CI.md](CI.md); los resultados anteriores conservan su contexto histórico.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -123,3 +123,13 @@ Tres casos adicionales de color/material y separación con conectores planares; 
 Bootstrap miniz 3.1.0 con SHA-256 y cuatro casos nuevos de pintura/área, presentación CPU sin ventana, código truncado y CRC. Total previsto 32 casos; no ejecutados sobre la versión final por bloqueo local, ni en Actions porque no se publicó este incremento. No confundir sintaxis/inventario comprobados con aceptación dinámica. PAINT_IMPORT.md registra el estado.
 
 Publicación autorizada por el usuario: se preparó además un paso independiente con los 36 casos de pintura antes bloqueados, usando el paquete extraído y PATH mínimo. La CI deberá ejecutar 32 casos generales y 36 de pintura; los modelos privados y reportes locales no se publican. Resultado pendiente al preparar esta subida.
+
+## Publicación y CI 0.3.2 — 2026-11-08 (Colombia)
+
+Publicación autorizada en main: `d2a219a853b8d5d16ef5f7bf50e8b07f6756ccd6`. [Ejecución 7](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42561054281) completada success en todas sus etapas: descarga/verificación de Qt/lib3mf/Manifold/miniz, build y paquete Release x64, **32 casos generales** y **36 de pintura**. El paso de pintura ejecuta también 80 árboles generados dentro de uno de sus casos y los límites reforzados de hojas, expansión, CRC/DTD/metadatos. Se resuelven las comprobaciones que no pudieron ejecutarse en la última compilación local; no se elimina ni modifica la política de Windows del equipo. Sin revisión visual/GPU ni prueba de instalador/VM limpia.
+
+Entorno remoto registrado en anotación pública: windows-2022, imagen 20261101.353.1, MSVC toolset 14.44.35207, SDK 10.0.26100.0, CMake 3.31.6, Ninja 1.13.2, Python 3.12.10, 7-Zip 26.05 y CRT 14.44.35211.0. Qt 6.8.3, lib3mf 2.5.0, Manifold 3.5.4 y miniz 3.1.0 fijados como en desarrollo. No son los mismos toolchain/CRT locales y no se promete igualdad binaria. Resultado consultado mediante API pública de GitHub, sin recuperar credenciales.
+
+[Artefacto windows-x64-7](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42561054281/artifacts/13649129176): 16 205 053 bytes, no expirado al consultar, retención de siete días. Digest del contenedor Actions `sha256:f775045ade8ede74880f6b559c8c2a4e81a5a192a311e580a7a6cb085a616d8b`. ZIP interior según anotación pública del runner: `STLCutStudioAI-0.3.2-portable-win-x64-20261109T041931693Z.zip`, SHA-256 `8821814d105103dcaae82e56818b53ab32e3a5f4ba7c9bc5e8feffc0a153419c`, inventario de 75 archivos más manifiesto. No confundir sus hashes con el ZIP local ni con el contenedor Actions. No se descargó/ejecutó ese artefacto en el equipo local. Los reportes ci-verification.json y ci-paint-verification.json se conservan en el artefacto.
+
+Fuera de Git: build/, SDK, binarios, modelos privados y prueba.stl. Sin release público ni instalador final. La publicación incluye los incrementos locales acumulados de exportación validada, conectores, materiales y pintura. Insertos, partición volumétrica y contactos generales continúan pendientes.

@@ -86,3 +86,7 @@ Importación con metadatos estándar, RGB por vértice en presentación, separac
 ## Lectura de pintura 0.3.2 en validación
 
 Se añadió miniz autorizada, lectura de partes XML/JSON, codec de subdivisiones y presentación CPU sin modificar geometría. No son todavía sólidos por color. Compilación y paquete completados; validación dinámica final bloqueada por la política de Control de aplicaciones de Windows. Evidencia preliminar, límites y siguiente paso en [PAINT_IMPORT.md](PAINT_IMPORT.md). Insertos/partición volumétrica siguen pendientes y autorizados, pero no se debe dar por validada su base antes de completar estas comprobaciones.
+
+## Publicación y aceptación remota 0.3.2
+
+Publicación autorizada d2a219a y ejecución CI 7 correctas: 32 casos generales y 36 de pintura, build/paquete y artefacto. Los pendientes de validación remota de lectura quedaron resueltos; el bloqueo local de Windows y la exclusión de revisión visual permanecen. Los dos modos volumétricos y contactos generales siguen pendientes de construcción. Evidencia en CI.md.

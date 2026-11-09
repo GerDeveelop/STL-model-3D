@@ -33,7 +33,7 @@ Ajuste aprobado 0.2.3: compartir validación STL de precisión, cierre y volumen
 
 Ampliación aprobada fase 0.3: conectores pin/cavidad con parámetros e historial; objetivo añadido de separación automática por color de 3MF con conectores entre regiones vecinas. Sustituye la restricción anterior de no comenzar conectores. Omitir revisión visual por decisión del usuario; ambos tipos de 3MF y ambos modos de pintura (insertos y partición volumétrica) ya fueron elegidos. Incremento estándar 0.3.1 en docs/COLOR_IMPORT.md; pintura/reconstrucción pendientes según docs/PHASE_03.md.
 
-Ampliación posterior aprobada: miniz 3.1.0 MIT, descarga fijada por SHA-256 y lectura ZIP en memoria sin extracción ni instalación global. Lectura de pintura 0.3.2 compilada; validación final bloqueada por Control de aplicaciones, según docs/PAINT_IMPORT.md. No eludir esa protección.
+Ampliación posterior aprobada: miniz 3.1.0 MIT, descarga fijada por SHA-256 y lectura ZIP en memoria sin extracción ni instalación global. Lectura de pintura 0.3.2 compilada y publicada con aprobación; validación remota satisfactoria en ejecución CI 7. La ejecución local continúa bloqueada por Control de aplicaciones, según docs/PAINT_IMPORT.md y docs/CI.md. No eludir esa protección.
 
 ## Documentación y autorización
 - Leer también docs/REQUIREMENTS.md, docs/ARCHITECTURE.md y docs/TEST_PLAN.md antes de implementar.

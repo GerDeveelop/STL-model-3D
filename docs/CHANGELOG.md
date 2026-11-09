@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 2026-11-08 — Publicación 0.3.2 y CI satisfactoria
+
+Publicados en main los incrementos acumulados como d2a219a, con autorización del usuario; modelos privados, prueba.stl y build/ excluidos. Añadida la batería inline completa de 36 casos de pintura al workflow, además de 32 comprobaciones generales. Ejecución CI 7 satisfactoria en todas las etapas y artefacto windows-x64-7 disponible. Evidencia, entorno y hashes en CI.md. El bloqueo local de Windows permanece y no se cambió su protección. Sin revisión visual ni instalador final; insertos/partición volumétrica pendientes.
+
 ## 2026-11-08 — Lectura de pintura 0.3.2 en validación
 
 Incorporada miniz 3.1.0 MIT tras autorización explícita; lector ZIP acotado, codec de pintura, asociación XML/JSON de filamentos y regiones baricéntricas separadas de la malla original. Nuevos diagnósticos CLI/CPU sin ventana. Release y paquete completados; solo inventario/CRC/hashes/licencias verificados en la versión final. Evidencia preliminar de pintura real, pero Windows bloqueó ejecución final con 4551 (Code Integrity); no se eludió ni se declara aceptación de las 36 pruebas o 32 del workflow. Sin revisión visual, push ni CI nueva. Insertos/partición volumétrica pendientes; PAINT_IMPORT.md.

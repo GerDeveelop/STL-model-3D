@@ -1,6 +1,6 @@
-# Lectura de pintura 3MF — 0.3.2 en validación
+# Lectura de pintura 3MF — 0.3.2
 
-Fecha local: 2026-11-08. Alcance ya autorizado: ambos tipos de 3MF y ambos modos futuros de reconstrucción (insertos y partición volumétrica). El usuario autorizó además miniz 3.1.0 para leer el ZIP original en memoria. Esta versión añade lectura de pintura y compiló Release, pero **la validación dinámica final no pudo ejecutarse por una política de Control de aplicaciones de Windows**. No se declara aceptada ni terminada la fase.
+Fecha local: 2026-11-08. Alcance ya autorizado: ambos tipos de 3MF y ambos modos futuros de reconstrucción (insertos y partición volumétrica). El usuario autorizó además miniz 3.1.0 para leer el ZIP original en memoria. Esta versión añade lectura de pintura y compiló Release. La validación dinámica final local quedó bloqueada por Control de aplicaciones, pero después se publicó con autorización y la CI Windows 7 completó correctamente 32 casos generales y los 36 de pintura. Véase CI.md. No se declara terminada la fase ni implementados los dos modos volumétricos.
 
 ## Qué se construyó
 
@@ -43,6 +43,10 @@ Referencias de formato consultadas: [TriangleSelector de Bambu Studio](https://r
 - ZIP provisional `STLCutStudioAI-0.3.2-portable-win-x64-20261109T040214286Z.zip`, SHA-256 `6eeed888d4ed36dbeb3bdd512ecfb06909969edae80c75571461b8952f0e203f`. **Solo validación estática**: CRC del ZIP, inventario exacto de 75 archivos más manifiesto, hashes y licencia miniz original comprobados sin extraer/ejecutar su exe. El hash de ese exe coincide con el bloqueado. Reporte build/paint-package-static-verification.json.
 - Workflow preparado con bootstrap miniz y cuatro casos nuevos (32 en total), sin ejecución local final ni remota de 0.3.2. Las regresiones de 0.3.1 no se atribuyen al binario nuevo. Última CI remota publicada: 0.2.2. Cambios locales sin commit/push, sin fuentes/carpetas de pruebas propias y sin modelos privados publicados.
 
-## Paso necesario para validar
+## Estado de la validación local y paso completado en CI
 
-Completar la batería en un entorno autorizado para ejecutar la aplicación, por ejemplo CI Windows tras autorización de publicación de los cambios. No se propone desactivar Control de aplicaciones ni modificar la política del equipo. Antes de construir sobre esta base los dos modos volumétricos deben resolverse los resultados pendientes de la validación de lectura.
+Completar la batería en un entorno autorizado para ejecutar la aplicación, por ejemplo CI Windows tras autorización de publicación de los cambios. No se propone desactivar Control de aplicaciones ni modificar la política del equipo. La validación de lectura pendiente quedó completada remotamente según la sección siguiente; la restricción local y la ausencia de revisión visual se mantienen.
+
+## Validación remota completada tras publicación
+
+Código d2a219a publicado en main por autorización del usuario. Ejecución 7 satisfactoria: build/paquete y **32/32** casos generales más **36/36** de pintura. Incluye los casos OPC externos con UUID, herencia anidada/ambigua, límite aislado de 65 536 hojas por stdin y límite global de presentación de 2M, con las causas de rechazo comprobadas. Se mantienen como evidencia histórica las pruebas preliminares y el bloqueo local descritos arriba. Enlaces, entorno y hashes remotos en [CI.md](CI.md). El siguiente desarrollo de insertos/partición ya puede apoyarse en esta aceptación remota, sin afirmar ejecución local ni revisión visual.

@@ -1,6 +1,6 @@
 # Compilación y paquete portátil Windows
 
-> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
+> Estado 0.3.2 publicado y validado en CI Windows: ejecución 7, commit d2a219a, build/paquete y 32 casos generales + 36 de pintura correctos. El bloqueo local 4551 no se ha cambiado; sin revisión visual. Insertos/partición volumétrica pendientes. Evidencia en [CI.md](CI.md); los resultados anteriores conservan su contexto histórico.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -122,3 +122,7 @@ ZIP final, checksum e inventario de 74 archivos más manifiesto verificados con 
 ## Paquete 0.3.2: verificación solo estática
 
 Release y ZIP generados con miniz estática y licencia original, 75 archivos más manifiesto. CRC/hashes/inventario comprobados sin ejecutar el exe bloqueado por Windows. No se declara runtime ni batería final aprobados. Hashes, registros y límite del bloqueo en PAINT_IMPORT.md. Sin commit/push ni release nuevo.
+
+## Paquete remoto 0.3.2 verificado
+
+CI 7 completó build/paquete, 32 casos generales y 36 de pintura. ZIP interior e inventario de 75 archivos más manifiesto verificados en el runner; enlaces y SHA-256 remoto en CI.md. El paquete local conserva solo su validación estática por bloqueo 4551. No se lanzó una copia del artefacto remoto en el equipo para sortear la política.

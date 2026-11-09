@@ -1,6 +1,6 @@
 # Plan de pruebas de fase 0.1
 
-> Estado local 0.3.2 en validación: lectura de pintura compilada y miniz autorizada; Windows bloquea ejecución final con 4551. Evidencia preliminar y límites en [PAINT_IMPORT.md](PAINT_IMPORT.md). Sin revisión visual, push ni CI nueva; última CI publicada 0.2.2. Las aceptaciones 0.3.1 siguientes son históricas.
+> Estado 0.3.2 publicado y validado en CI Windows: ejecución 7, commit d2a219a, build/paquete y 32 casos generales + 36 de pintura correctos. El bloqueo local 4551 no se ha cambiado; sin revisión visual. Insertos/partición volumétrica pendientes. Evidencia en [CI.md](CI.md); los resultados anteriores conservan su contexto histórico.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.
 
@@ -80,3 +80,7 @@ Color/material, regiones conectadas, contactos, grosor, holguras, booleanas de c
 ## Pintura 0.3.2: aceptación pendiente
 
 Preparada batería inline de 36 casos con 80 árboles de subdivisión, herencia, reflexión, CRC/DTD/límites y fuente intacta. La última ejecución fue bloqueada antes de arrancar por WinError 4551; no se declara aprobada. Hubo 32/36 aceptaciones preliminares antes de corregir cuatro casos del generador/límite del SDK. Workflow ampliado a 32 casos, sin ejecución final local ni remota. Detalle de evidencia y separación de resultados en PAINT_IMPORT.md.
+
+## Resultado remoto 0.3.2
+
+Ejecución 7 sobre d2a219a: **32/32** casos generales y **36/36** de pintura correctos, incluido el caso que genera 80 árboles y los límites de expansión/hojas/CRC/DTD. Build, paquete y artefacto satisfactorios. No se convierten las pruebas locales bloqueadas en aprobadas: esta evidencia corresponde al runner remoto y su toolchain. Enlaces y entorno en CI.md. Sin revisión visual ni aceptación del instalador final.
