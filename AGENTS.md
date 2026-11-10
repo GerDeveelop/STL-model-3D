@@ -37,6 +37,8 @@ Ampliación posterior aprobada: miniz 3.1.0 MIT, descarga fijada por SHA-256 y l
 
 ## Documentación y autorización
 
+- Publicación 0.3.3/0.3.4 completada en main dbacc4a y CI 8 satisfactoria (32+72 casos, build/paquete). Se completó la aceptación remota pendiente. El bloqueo local 4551 no se modificó ni se debe eludir. Véanse docs/CI.md y docs/REGION_CONNECTORS.md; los estados de no publicación/aceptación pendiente siguientes son históricos.
+
 - Publicación posterior autorizada por el usuario: subir juntos 0.3.3 y 0.3.4 a GitHub y completar su validación en CI Windows. La restricción de no publicar de las notas siguientes describe el estado previo a esta autorización. No se autoriza cambiar ni eludir la política de seguridad local.
 
 - Continuación 0.3.4 autorizada: conectores entre regiones reconstruidas con guardas/barrido y omisiones explícitas; docs/REGION_CONNECTORS.md. Release/ZIP terminados pero batería final bloqueada de nuevo por Windows 4551; no ejecutar copias, variantes ni cambiar la protección para eludirlo. Pendiente de validación en entorno autorizado. Sin publicación nueva autorizada para estos incrementos locales.

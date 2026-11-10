@@ -1,6 +1,6 @@
 # STL Cut Studio AI
 
-**Último incremento local 0.3.4 (2026-11-09), pendiente de aceptación:** conectores opcionales entre regiones reconstruidas, guardas/paredes, comprobación conservadora de entrada recta y diagnóstico de parejas omitidas. Release/ZIP completados, pero Windows bloqueó la batería final con 4551. Solo paquete estático verificado; los resultados 0.3.3 siguientes no validan este binario. Contrato y evidencia en [REGION_CONNECTORS.md](docs/REGION_CONNECTORS.md). Sin publicación ni nueva CI remota.
+**Estado vigente 0.3.4 (2026-11-09):** incrementos 0.3.3/0.3.4 publicados en main dbacc4a. [CI 8](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42751423136) satisfactoria: build/paquete, **32+72 comprobaciones correctas** y artefacto. Incluye ambos modos de volumen desde pintura y conectores locales compatibles, con omisiones explícitas. [Contrato y límites](docs/REGION_CONNECTORS.md). La aceptación remota quedó completada sin cambiar la seguridad local ni hacer revisión visual; fase 0.3 aún abierta. Los registros locales siguientes conservan su contexto histórico.
 
 **Incremento local 0.3.3 (2026-11-09):** construcción de volúmenes desde pintura con dos modos seleccionables: insertos con profundidad y partición completa, mediante celdas de resolución explícita. Release y 54 comprobaciones de pintura/volumen correctas. Contrato y límites en [PAINT_VOLUME.md](docs/PAINT_VOLUME.md). Los conectores para estas interfaces siguen pendientes. Sin publicación ni nueva CI remota; el estado 0.3.2 siguiente corresponde a la versión publicada.
 

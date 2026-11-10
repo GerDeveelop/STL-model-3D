@@ -1,8 +1,8 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
-**Versión del documento:** 1.7
+**Versión del documento:** 1.8
 
-**Último incremento local 0.3.4 (2026-11-09), pendiente de aceptación:** conectores opcionales entre regiones de pintura con guardas, pared, colisiones, barrido recto conservador y omisiones explícitas. Compilación/paquete terminados. Batería final de 72 casos bloqueada antes de ejecutar por Windows 4551; solo validación estática del paquete. No se atribuyen las aceptaciones de 0.3.3 a este binario. [REGION_CONNECTORS.md](REGION_CONNECTORS.md). Sin publicación, nueva CI ni revisión visual; no se cierra la fase.
+**Estado vigente 0.3.4 (2026-11-09):** 0.3.3/0.3.4 publicados en main dbacc4a y CI 8 satisfactoria: build/paquete, **32+72 comprobaciones correctas**, artefacto e inventario. Ambos modos de volumen y conectores locales aceptados remotamente dentro de sus límites. [CI.md](CI.md), [REGION_CONNECTORS.md](REGION_CONNECTORS.md). La política/bloqueo local no cambió; sin revisión visual ni cierre de fase. Las notas siguientes describen estados históricos.
 
 **Incremento local vigente 0.3.3, 2026-11-09:** ambos modos de volumen desde pintura incorporados mediante celdas, con resolución y profundidad explícitas. Release y 54 comprobaciones locales de pintura/volumen correctas. Contrato en [PAINT_VOLUME.md](PAINT_VOLUME.md). Los conectores de estas interfaces y reparación siguen pendientes. Sin nueva publicación/CI; el estado publicado 0.3.2 siguiente y su bloqueo CLI son evidencia histórica. El lanzamiento GUI posterior de 0.3.2 funcionó tras desplegar Qt, sin cambiar la política, y el CLI nuevo se ejecutó durante la validación 0.3.3; no se afirma que se haya cambiado/resuelto globalmente Control de aplicaciones.
 **Estado:** versión 0.3.2 publicada en main (d2a219a): lectura de pintura 3MF, colores/regiones y conectores del alcance documentado. CI Windows ejecución 7 satisfactoria: build, paquete, 32 comprobaciones generales y 36 de pintura. Evidencia en [CI.md](CI.md). El bloqueo local 4551 permanece; no se modificó la protección ni se hizo revisión visual. Insertos y partición volumétrica siguen pendientes.

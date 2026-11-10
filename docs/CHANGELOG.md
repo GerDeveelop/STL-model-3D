@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 2026-11-09 — Publicación y aceptación CI 0.3.4
+
+Tras autorización, 0.3.3/0.3.4 publicados en main dbacc4a. CI 8 completó build/paquete, **32/32 comprobaciones generales y 72/72 de pintura/volumen/conectores** y artefacto windows-x64-8. Resuelta la aceptación remota pendiente; el bloqueo local permanece documentado sin modificar seguridad. Sin revisión visual ni cierre de fase. Evidencia y hashes en CI.md.
+
 ## 2026-11-09 — Conectores entre regiones 0.3.4 en aceptación
 
 Conectores opcionales en partición/insertos; búsqueda sobre facetas, cilindros de guarda, nominales y delta de volumen, separación, colisiones y recorrido recto conservador. Omisiones explícitas por pareja, informes JSON asociados a IDs de sesión y GUI con resumen; publicación por historial transaccional. Release/ZIP completados; dos casos preliminares ejecutados. La batería final de 72 casos quedó bloqueada antes de arrancar por Windows 4551; no se declara aprobada. Paquete solo estático: CRC/inventario/hashes/licencia y exe idéntico al bloqueado. Workflow preparado con 18 casos nuevos y detención al primer 4551. Sin revisión visual, dependencias nuevas, fuentes/carpetas de pruebas ni cambios de seguridad. Sin commit/push ni CI remota nueva. Contrato en REGION_CONNECTORS.md.

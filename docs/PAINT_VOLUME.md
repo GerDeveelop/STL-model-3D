@@ -1,5 +1,7 @@
 # Reconstrucción volumétrica por color — incremento 0.3.3
 
+> Publicación/aceptación posterior completadas: ambos modos y conectores 0.3.4 se publicaron en dbacc4a; CI 8 aprobó build/paquete, 32 casos generales y 72 de pintura/volumen/conectores. Evidencia y límites vigentes en [REGION_CONNECTORS.md](REGION_CONNECTORS.md) y [CI.md](CI.md). Se conserva la distinción de resultados locales/remotos.
+
 > Actualización 0.3.4: la casilla y objeto JSON de conectores ahora se admiten para ambos modos con diagnóstico de omisiones. Véase [REGION_CONNECTORS.md](REGION_CONNECTORS.md). Compilados, pero su batería final está bloqueada por 4551 y su aceptación pendiente. Las prohibiciones de connector que siguen documentan la versión 0.3.3, al igual que sus 86 aceptaciones; no describen la ruta nueva ni validan el binario 0.3.4.
 
 Fecha: 2026-11-09. Alcance previamente autorizado: insertos con profundidad configurable y partición completa del volumen. Sin dependencias nuevas, IA, instalador, publicación ni revisión visual. Estado de compilación/validación al final.

@@ -1,6 +1,6 @@
 # Requisitos de fase 0.1
 
-> Último incremento 0.3.4 en aceptación: conectores entre regiones reconstruidas incorporados con guardas y comprobación conservadora de recorrido. No se prometen colocación universal ni orden global de ensamblaje. Release/ZIP completados; Windows bloqueó la batería final con 4551. Las aceptaciones anteriores no validan esta versión. Contrato/evidencia en [REGION_CONNECTORS.md](REGION_CONNECTORS.md).
+> Estado 0.3.4 publicado y aceptado en CI 8: conectores entre regiones con guardas y recorrido conservador. Build/paquete y 32+72 casos correctos sobre dbacc4a. Se mantienen los límites de colocación/ensamblaje y el bloqueo local sin modificar. Evidencia en [CI.md](CI.md), contrato en [REGION_CONNECTORS.md](REGION_CONNECTORS.md). Las menciones de aceptación pendiente siguientes son históricas.
 
 > Incremento local 0.3.3 (2026-11-09): ambos modos de volumen desde pintura incorporados con resolución configurable, insertos con profundidad y núcleo sin color asignado. Interfaces internas aproximadas por celdas; conectores para esas interfaces pendientes. Release y 54 comprobaciones locales de pintura/volumen correctas. Detalle y presupuestos en [PAINT_VOLUME.md](PAINT_VOLUME.md); las menciones de pendientes anteriores son históricas.
 

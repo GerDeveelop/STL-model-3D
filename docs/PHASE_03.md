@@ -1,5 +1,9 @@
 # Fase 0.3 — Conectores y separación por color 3MF
 
+## Publicación y aceptación remota 0.3.4 completadas
+
+Usuario autorizó publicar 0.3.3/0.3.4. Commit dbacc4a en main y CI 8 satisfactorios: build/paquete, **32 comprobaciones generales y 72 de pintura/volumen/conectores correctas**. La aceptación pendiente por bloqueo local quedó completada en el runner; no se cambió la seguridad local ni se realizó revisión visual. Evidencia en [CI.md](CI.md). Continúan pendientes ampliar aceptación de redes con varias uniones generadas/curvatura, parámetros de reconstrucción en historial, diagnóstico/reparación y montaje global; no se cierra la fase.
+
 ## Incremento local 0.3.4 — aceptación pendiente
 
 Conectores opcionales al construir ambos modos de pintura, búsqueda local sobre facetas, guardas de pared/anclaje, holgura, separación de conectores, colisiones y barrido conservador del tramo recto final. Diagnóstico de parejas candidatas omitidas en interfaz y JSON. Compilación y paquete completados; dos casos preliminares ejecutados, pero la batería final de 72 casos fue bloqueada por Windows 4551 antes de arrancar. Solo verificación estática del ZIP. Contrato y límites en [REGION_CONNECTORS.md](REGION_CONNECTORS.md). Sustituye la mención de “conectores de interfaces pendientes de construcción” del incremento siguiente; **su aceptación dinámica sigue pendiente**, junto con redes complejas, parámetros completos en historial y reparación. Sin publicación/CI nueva ni cierre de fase.
