@@ -1,5 +1,9 @@
 # Arquitectura y decisiones
 
+> Incremento 0.3.4 en aceptación: `RegionConnectors` sin Qt ni dependencias nuevas recibe regiones inmutables y devuelve mallas/diagnósticos. Guarda booleana, volúmenes nominales, barridos convexos conservadores y validación STL preceden `commitSplit`; omisiones por pareja explícitas. Integrado en `PaintVolume`, GUI y CLI. Release/ZIP terminados; ejecución final bloqueada por 4551. Contrato en [REGION_CONNECTORS.md](REGION_CONNECTORS.md).
+
+> Incremento local 0.3.3 (2026-11-09): `core/cutting/PaintVolume`, sin Qt ni dependencias nuevas, clasifica celdas por cercanía a facetas de color y recorta contra el sólido original con Manifold. Dos modos explícitos, componentes/cavidades, validación STL previa y publicación por `commitSplit` desde trabajador GUI o CLI. Contrato y límites en [PAINT_VOLUME.md](PAINT_VOLUME.md). Las descripciones de reconstrucción pendiente siguientes corresponden a incrementos anteriores.
+
 > Estado 0.3.2 publicado y validado en CI Windows: ejecución 7, commit d2a219a, build/paquete y 32 casos generales + 36 de pintura correctos. El bloqueo local 4551 no se ha cambiado; sin revisión visual. Insertos/partición volumétrica pendientes. Evidencia en [CI.md](CI.md); los resultados anteriores conservan su contexto histórico.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.

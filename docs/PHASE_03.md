@@ -1,5 +1,13 @@
 # Fase 0.3 — Conectores y separación por color 3MF
 
+## Incremento local 0.3.4 — aceptación pendiente
+
+Conectores opcionales al construir ambos modos de pintura, búsqueda local sobre facetas, guardas de pared/anclaje, holgura, separación de conectores, colisiones y barrido conservador del tramo recto final. Diagnóstico de parejas candidatas omitidas en interfaz y JSON. Compilación y paquete completados; dos casos preliminares ejecutados, pero la batería final de 72 casos fue bloqueada por Windows 4551 antes de arrancar. Solo verificación estática del ZIP. Contrato y límites en [REGION_CONNECTORS.md](REGION_CONNECTORS.md). Sustituye la mención de “conectores de interfaces pendientes de construcción” del incremento siguiente; **su aceptación dinámica sigue pendiente**, junto con redes complejas, parámetros completos en historial y reparación. Sin publicación/CI nueva ni cierre de fase.
+
+## Incremento local vigente 0.3.3 — 2026-11-09
+
+Implementadas las dos opciones de reconstrucción por celdas: partición completa por cercanía al color exterior e insertos de profundidad configurable con núcleo explícitamente sin color asignado. Controles GUI y CLI `split-paint`, trabajador cancelable, componentes/cavidades e historial transaccional. Release y 54 aceptaciones locales de pintura/volumen correctas. Contrato, aproximaciones y límites en [PAINT_VOLUME.md](PAINT_VOLUME.md). Las afirmaciones de “ambos modos pendientes” de las secciones anteriores se conservan como historial y quedan sustituidas por este incremento. **Siguen pendientes los conectores sobre estas interfaces, contactos generales y reparación**; no se declara cerrada la fase. Sin revisión visual, publicación ni CI nueva.
+
 ## Autorización y estado
 
 El usuario aprobó continuar la construcción con pines/cavidades configurables e integración con Deshacer/Rehacer y añadió separar automáticamente un 3MF por colores con sus conectores. Solicitó omitir revisión visual. Primer incremento local 0.3.0 compilado: conectores opcionales al cortar. La separación por color y sus dos modos volumétricos siguen en diseño; no se declaran implementados. Uso y evidencia del primer incremento se detallan al final de este documento.

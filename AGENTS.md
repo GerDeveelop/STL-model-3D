@@ -36,6 +36,12 @@ Ampliación aprobada fase 0.3: conectores pin/cavidad con parámetros e historia
 Ampliación posterior aprobada: miniz 3.1.0 MIT, descarga fijada por SHA-256 y lectura ZIP en memoria sin extracción ni instalación global. Lectura de pintura 0.3.2 compilada y publicada con aprobación; validación remota satisfactoria en ejecución CI 7. La ejecución local continúa bloqueada por Control de aplicaciones, según docs/PAINT_IMPORT.md y docs/CI.md. No eludir esa protección.
 
 ## Documentación y autorización
+
+- Publicación posterior autorizada por el usuario: subir juntos 0.3.3 y 0.3.4 a GitHub y completar su validación en CI Windows. La restricción de no publicar de las notas siguientes describe el estado previo a esta autorización. No se autoriza cambiar ni eludir la política de seguridad local.
+
+- Continuación 0.3.4 autorizada: conectores entre regiones reconstruidas con guardas/barrido y omisiones explícitas; docs/REGION_CONNECTORS.md. Release/ZIP terminados pero batería final bloqueada de nuevo por Windows 4551; no ejecutar copias, variantes ni cambiar la protección para eludirlo. Pendiente de validación en entorno autorizado. Sin publicación nueva autorizada para estos incrementos locales.
+
+- Continuación autorizada 2026-11-09: incremento local 0.3.3 con ambos modos de volumen desde pintura por celdas, resolución/profundidad explícitas y validación transaccional. Contrato en docs/PAINT_VOLUME.md. Conectores de estas interfaces pendientes. El CLI recién compilado pudo ejecutarse en validación sin cambios de seguridad; no se interpreta el bloqueo anterior como autorización para eludir políticas.
 - Leer también docs/REQUIREMENTS.md, docs/ARCHITECTURE.md y docs/TEST_PLAN.md antes de implementar.
 - Documentar por desarrollo requisitos, versiones, librerías, frameworks, configuración y resultados de pruebas.
 - Registrar nombres y finalidad de variables o API keys cuando correspondan; nunca sus valores secretos.

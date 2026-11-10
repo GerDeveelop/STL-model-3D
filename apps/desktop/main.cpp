@@ -3,6 +3,7 @@
 #include "core/io/StlWriter.h"
 #include "core/cutting/PlaneCut.h"
 #include "core/cutting/ColorSplit.h"
+#include "core/cutting/PaintVolume.h"
 #include "core/projects/EditHistory.h"
 #include "MeshView.h"
 #include "ModelImport.h"
@@ -147,7 +148,7 @@ QJsonObject historyJson(const stlcut::EditHistory& history)
 // in the argument. Uses the same history, cutter and serializer as the window.
 int editSession(const QString& text)
 {
-    QJsonObject result;QJsonArray states,exports;
+    QJsonObject result;QJsonArray states,exports,connectorReports;
     std::uint64_t exportBytes=0;
     std::unique_ptr<stlcut::EditHistory> history;
     int code=0;
@@ -203,6 +204,50 @@ int editSession(const QString& text)
                     const auto commit=history->commitCut(std::make_shared<const stlcut::Mesh>(std::move(cut.positive)),
                                                          std::make_shared<const stlcut::Mesh>(std::move(cut.negative)));
                     result.insert("discarded_steps",static_cast<qint64>(commit.discardedSteps));
+                }
+            } else if(op=="split-paint") {
+                if(!history->selectedIsActive())throw std::runtime_error("Seleccione una pieza activa.");
+                stlcut::ConnectorSpec connector;const bool withConnector=command.contains("connector");
+                if(withConnector) {
+                    if(!command.value("connector").isObject())throw std::runtime_error("Conector JSON invalido.");
+                    const auto fields=command.value("connector").toObject();
+                    double* values[]={&connector.diameter,&connector.depth,&connector.clearance,&connector.wall};
+                    const char* names[]={"diameter","depth","clearance","wall"};
+                    for(int i=0;i<4;++i) {
+                        if(!fields.value(names[i]).isDouble())throw std::runtime_error("Faltan parametros numericos del conector.");
+                        *values[i]=fields.value(names[i]).toDouble();
+                    }
+                }
+                stlcut::PaintVolumeSpec spec;
+                const auto mode=command.value("mode").toString();
+                if(mode!="inserts"&&mode!="partition")throw std::runtime_error("Modo requerido: inserts o partition.");
+                spec.mode=mode=="inserts"?stlcut::PaintVolumeMode::Inserts:stlcut::PaintVolumeMode::Partition;
+                if(!command.value("resolution").isDouble()||(mode=="inserts"&&!command.value("depth").isDouble()))
+                    throw std::runtime_error("Indique resolution y, para insertos, depth numericos.");
+                spec.resolution=command.value("resolution").toDouble();
+                if(command.contains("depth")) {
+                    if(!command.value("depth").isDouble())throw std::runtime_error("Profundidad invalida.");
+                    spec.depth=command.value("depth").toDouble();
+                }
+                std::vector<stlcut::RegionConnection> connections;
+                auto pieces=stlcut::splitPaintVolume(*history->selected()->mesh,spec,{},withConnector?&connector:nullptr,&connections);
+                std::vector<std::shared_ptr<const stlcut::Mesh>> meshes;
+                for(auto& mesh:pieces)meshes.push_back(std::make_shared<const stlcut::Mesh>(std::move(mesh)));
+                auto next=*history;next.setConnector(connector,withConnector);const auto ids=next.commitSplit(meshes);*history=std::move(next);
+                if(withConnector) {
+                    QJsonArray links;
+                    for(const auto& link:connections) {
+                        QJsonObject item{{"first_piece",static_cast<qint64>(ids.at(link.first))},{"second_piece",static_cast<qint64>(ids.at(link.second))},
+                            {"connected",link.connected},{"reason",QString::fromStdString(link.reason)}};
+                        if(link.connected) {
+                            item.insert("donor_piece",static_cast<qint64>(ids.at(link.donor)));item.insert("receiver_piece",static_cast<qint64>(ids.at(link.receiver)));
+                            item.insert("position",vectorJson(link.position));item.insert("normal",vectorJson(link.normal));
+                            item.insert("added_volume",link.addedVolume);item.insert("removed_volume",link.removedVolume);
+                        }
+                        links.append(item);
+                    }
+                    connectorReports.append(QJsonObject{{"step",states.size()},{"connections",links}});
+                    result.insert("connector_reports",connectorReports);
                 }
             } else if(op=="split-materials") {
                 if(!history->selectedIsActive())throw std::runtime_error("Seleccione una pieza activa.");
@@ -421,6 +466,18 @@ public:
         form->addRow(cutButton_);connect(cutButton_,&QPushButton::clicked,this,[this]{startCut();});
         splitMaterials_=new QPushButton(QStringLiteral("Separar cuerpos por material / color"),cutting);
         form->addRow(splitMaterials_);connect(splitMaterials_,&QPushButton::clicked,this,[this]{startMaterialSplit();});
+        paintMode_=new QComboBox(cutting);
+        paintMode_->addItems({QStringLiteral("Partición completa por color"),QStringLiteral("Insertos y núcleo sin color asignado")});
+        form->addRow(QStringLiteral("Volumen desde pintura"),paintMode_);
+        paintResolution_=new QDoubleSpinBox(cutting);paintResolution_->setDecimals(4);paintResolution_->setRange(.0001,1e6);paintResolution_->setValue(1);
+        form->addRow(QStringLiteral("Tamaño máximo de celda"),paintResolution_);
+        paintDepth_=new QDoubleSpinBox(cutting);paintDepth_->setDecimals(4);paintDepth_->setRange(.0001,1e6);paintDepth_->setValue(2);
+        form->addRow(QStringLiteral("Profundidad del inserto"),paintDepth_);paintDepth_->setEnabled(false);
+        connect(paintMode_,qOverload<int>(&QComboBox::currentIndexChanged),this,[this](int i){paintDepth_->setEnabled(i==1);});
+        auto* paintHint=new QLabel(QStringLiteral("Interfaces escalonadas según celda; exterior recortado al original. Active la casilla de conectores para buscar pines/cavidades seguros. Se informan las uniones omitidas; no se certifica el orden global de montaje."),cutting);
+        paintHint->setWordWrap(true);form->addRow(paintHint);
+        splitPaint_=new QPushButton(QStringLiteral("Construir piezas desde pintura"),cutting);
+        form->addRow(splitPaint_);connect(splitPaint_,&QPushButton::clicked,this,[this]{startMaterialSplit(true);});
         pieces_=new QComboBox(cutting);
         pieces_->setObjectName(QStringLiteral("pieceSelection"));
         form->addRow(QStringLiteral("Mostrar / exportar"),pieces_);
@@ -636,6 +693,7 @@ private:
         cutControls_->setEnabled(available);
         cutButton_->setEnabled(available&&history_.selectedIsActive());
         splitMaterials_->setEnabled(available&&history_.selectedIsActive());
+        splitPaint_->setEnabled(available&&history_.selectedIsActive());
         undo_->setEnabled(available&&history_.undoCount()>0);
         redo_->setEnabled(available&&history_.redoCount()>0);
         if(available)statusBar()->showMessage(history_.state().pieces.size()==1 ? QStringLiteral("Sesión con 1 pieza activa"):
@@ -738,18 +796,20 @@ private:
         });
         worker_->start();
     }
-    void startMaterialSplit() {
+    void startMaterialSplit(bool paint=false) {
         if(worker_||history_.empty()||!history_.selectedIsActive())return;
+        const stlcut::PaintVolumeSpec paintSpec{paintMode_->currentIndex()==1?stlcut::PaintVolumeMode::Inserts:stlcut::PaintVolumeMode::Partition,paintResolution_->value(),paintDepth_->value()};
         const auto source=history_.selected()->mesh;
         const bool withConnector=connectors_->isChecked();
         const stlcut::ConnectorSpec connector{connectorInputs_[0]->value(),connectorInputs_[1]->value(),connectorInputs_[2]->value(),connectorInputs_[3]->value()};
         auto meshes=std::make_shared<std::vector<std::shared_ptr<const stlcut::Mesh>>>();
         auto views=std::make_shared<std::vector<std::shared_ptr<const ViewMesh>>>();
+        auto connections=std::make_shared<std::vector<stlcut::RegionConnection>>();
         job_=std::make_shared<ImportJob>();const auto job=job_;
-        worker_=QThread::create([source,meshes,views,job,withConnector,connector] {
+        worker_=QThread::create([source,meshes,views,connections,job,withConnector,connector,paint,paintSpec] {
             try {
                 const auto stop=job->cancellation.get_token();
-                auto pieces=stlcut::splitByMaterial(*source,stop,withConnector ? &connector:nullptr);
+                auto pieces=paint?stlcut::splitPaintVolume(*source,paintSpec,stop,withConnector?&connector:nullptr,connections.get()):stlcut::splitByMaterial(*source,stop,withConnector ? &connector:nullptr);
                 for(auto& mesh:pieces) {
                     views->push_back(prepareViewMesh(mesh,stop));
                     meshes->push_back(std::make_shared<const stlcut::Mesh>(std::move(mesh)));
@@ -759,8 +819,8 @@ private:
         });
         worker_->setParent(this);open_->setEnabled(false);updateHistoryActions();
         cancel_->setText(QStringLiteral("Cancelar separación (Ctrl+.)"));cancel_->setEnabled(true);cancel_->show();progress_->show();
-        outcome_->setText(QStringLiteral("Separando regiones de material y comprobando cierre…"));
-        connect(worker_,&QThread::finished,this,[this,job,meshes,views] {
+        outcome_->setText(paint?QStringLiteral("Reconstruyendo volúmenes por color y validando cierre, volumen y exportación…"):QStringLiteral("Separando regiones de material y comprobando cierre…"));
+        connect(worker_,&QThread::finished,this,[this,job,meshes,views,connections,paint,withConnector] {
             worker_->wait();worker_->deleteLater();worker_=nullptr;
             if(job->cancelled||job->cancellation.stop_requested())outcome_->setText(QStringLiteral("Separación cancelada. Se conserva la sesión."));
             else if(!job->error.isEmpty())outcome_->setText(QStringLiteral("Separación descartada: %1").arg(job->error));
@@ -774,6 +834,13 @@ private:
                 history_=std::move(next);pieceViews_.swap(cache);refreshScene();
                 const bool connected=!meshes->empty()&&meshes->front()->format=="3mf-material-connected";
                 outcome_->setText(QStringLiteral("Separación completada: %1 regiones sólidas. %2\nSTL no conserva color.").arg(ids.size()).arg(connected ? QStringLiteral("Pin y cavidad generados."):QStringLiteral("No se generaron conectores.")));
+                if(paint&&withConnector) {
+                    const auto generated=std::count_if(connections->begin(),connections->end(),[](const auto& link){return link.connected;});
+                    QString text=QStringLiteral("Separación completada: %1 piezas. Conectores: %2 generados; %3 parejas candidatas omitidas.\nNo se certifica el orden global de montaje. STL no conserva color.")
+                        .arg(ids.size()).arg(generated).arg(connections->size()-static_cast<size_t>(generated));
+                    for(const auto& link:*connections)if(!link.connected)text+=QStringLiteral("\nRegiones %1/%2 sin conector: %3").arg(link.first+1).arg(link.second+1).arg(QString::fromStdString(link.reason));
+                    if(connections->empty())text+=QStringLiteral("\nNo hay parejas candidatas en contacto.");outcome_->setText(text);
+                }
             }catch(const std::exception& e) {outcome_->setText(QStringLiteral("No se aplicó la separación: %1").arg(QString::fromUtf8(e.what())));}
             job_.reset();open_->setEnabled(true);cancel_->hide();progress_->hide();updateHistoryActions();
         });
@@ -823,6 +890,10 @@ private:
     }
     QString sourcePath_;
     QPushButton* splitMaterials_{};
+    QPushButton* splitPaint_{};
+    QComboBox* paintMode_{};
+    QDoubleSpinBox* paintResolution_{};
+    QDoubleSpinBox* paintDepth_{};
     QCheckBox* connectors_{};
     QDoubleSpinBox* connectorInputs_[4]{};
     stlcut::EditHistory history_;

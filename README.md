@@ -1,5 +1,9 @@
 # STL Cut Studio AI
 
+**Último incremento local 0.3.4 (2026-11-09), pendiente de aceptación:** conectores opcionales entre regiones reconstruidas, guardas/paredes, comprobación conservadora de entrada recta y diagnóstico de parejas omitidas. Release/ZIP completados, pero Windows bloqueó la batería final con 4551. Solo paquete estático verificado; los resultados 0.3.3 siguientes no validan este binario. Contrato y evidencia en [REGION_CONNECTORS.md](docs/REGION_CONNECTORS.md). Sin publicación ni nueva CI remota.
+
+**Incremento local 0.3.3 (2026-11-09):** construcción de volúmenes desde pintura con dos modos seleccionables: insertos con profundidad y partición completa, mediante celdas de resolución explícita. Release y 54 comprobaciones de pintura/volumen correctas. Contrato y límites en [PAINT_VOLUME.md](docs/PAINT_VOLUME.md). Los conectores para estas interfaces siguen pendientes. Sin publicación ni nueva CI remota; el estado 0.3.2 siguiente corresponde a la versión publicada.
+
 Aplicación de escritorio Windows 10/11 x64 para importar STL/3MF, visualizar mallas, cortar por plano y exportar piezas STL.
 
 **Estado al 2026-11-08:** versión 0.3.2 publicada en main (d2a219a): lectura de pintura 3MF, colores/regiones y conectores del alcance documentado. CI Windows ejecución 7 satisfactoria: build, paquete, 32 comprobaciones generales y 36 de pintura. Evidencia en [CI.md](docs/CI.md). El bloqueo local 4551 permanece; no se modificó la protección ni se hizo revisión visual. Insertos y partición volumétrica siguen pendientes.

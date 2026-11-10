@@ -1,5 +1,7 @@
 # Lectura de pintura 3MF — 0.3.2
 
+> Actualización 2026-11-09: la lectura descrita aquí se conserva. El incremento local 0.3.3 añade los dos modos de reconstrucción por celdas; véase [PAINT_VOLUME.md](PAINT_VOLUME.md). Las menciones de reconstrucción pendiente y bloqueo local en este documento describen el estado histórico de 0.3.2. El CLI 0.3.3 se ejecutó para sus 54 comprobaciones locales; no se modificó la política de Windows ni se certifica que el bloqueo histórico se haya resuelto globalmente.
+
 Fecha local: 2026-11-08. Alcance ya autorizado: ambos tipos de 3MF y ambos modos futuros de reconstrucción (insertos y partición volumétrica). El usuario autorizó además miniz 3.1.0 para leer el ZIP original en memoria. Esta versión añade lectura de pintura y compiló Release. La validación dinámica final local quedó bloqueada por Control de aplicaciones, pero después se publicó con autorización y la CI Windows 7 completó correctamente 32 casos generales y los 36 de pintura. Véase CI.md. No se declara terminada la fase ni implementados los dos modos volumétricos.
 
 ## Qué se construyó

@@ -1,5 +1,9 @@
 # Requisitos de fase 0.1
 
+> Último incremento 0.3.4 en aceptación: conectores entre regiones reconstruidas incorporados con guardas y comprobación conservadora de recorrido. No se prometen colocación universal ni orden global de ensamblaje. Release/ZIP completados; Windows bloqueó la batería final con 4551. Las aceptaciones anteriores no validan esta versión. Contrato/evidencia en [REGION_CONNECTORS.md](REGION_CONNECTORS.md).
+
+> Incremento local 0.3.3 (2026-11-09): ambos modos de volumen desde pintura incorporados con resolución configurable, insertos con profundidad y núcleo sin color asignado. Interfaces internas aproximadas por celdas; conectores para esas interfaces pendientes. Release y 54 comprobaciones locales de pintura/volumen correctas. Detalle y presupuestos en [PAINT_VOLUME.md](PAINT_VOLUME.md); las menciones de pendientes anteriores son históricas.
+
 > Estado 0.3.2 publicado y validado en CI Windows: ejecución 7, commit d2a219a, build/paquete y 32 casos generales + 36 de pintura correctos. El bloqueo local 4551 no se ha cambiado; sin revisión visual. Insertos/partición volumétrica pendientes. Evidencia en [CI.md](CI.md); los resultados anteriores conservan su contexto histórico.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.

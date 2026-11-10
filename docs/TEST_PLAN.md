@@ -1,5 +1,9 @@
 # Plan de pruebas de fase 0.1
 
+> 0.3.4: batería preparada de **72 casos** de pintura/volumen/conectores, con 18 casos nuevos. **Bloqueada antes de ejecutar por WinError 4551; ninguna aceptación final**. Dos casos preliminares corresponden a una compilación anterior. Release, ZIP y sus comprobaciones estáticas completados; dos bloques Python del workflow analizados sintácticamente. Se mantienen 32 regresiones generales preparadas, no ejecutadas contra 0.3.4. Detalles en [REGION_CONNECTORS.md](REGION_CONNECTORS.md). Sin revisión visual ni nueva CI; 0.3.3 sigue siendo evidencia separada.
+
+> Incremento local 0.3.3 (2026-11-09): Release y **54/54** aceptaciones de pintura/reconstrucción correctas (36 existentes y 18 nuevas). Incluyen separación/componentes, cavidades y profundidad del núcleo, exportación/reimportación de ambos modos, reflexión, undo/redo, preservación de Rehacer al fallar, colores ausentes/interpolados y límites. Modelos generados en memoria, sin fuentes/carpetas de pruebas; reporte `build/paint-volume-inline-results.json`. Paquete: **32/32** regresiones generales más **54/54** de pintura/volumen, PATH mínimo y carpeta con espacios/ñ; inventario y hashes verificados. Sin revisión visual ni nueva CI remota. Véase [PAINT_VOLUME.md](PAINT_VOLUME.md).
+
 > Estado 0.3.2 publicado y validado en CI Windows: ejecución 7, commit d2a219a, build/paquete y 32 casos generales + 36 de pintura correctos. El bloqueo local 4551 no se ha cambiado; sin revisión visual. Insertos/partición volumétrica pendientes. Evidencia en [CI.md](CI.md); los resultados anteriores conservan su contexto histórico.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.

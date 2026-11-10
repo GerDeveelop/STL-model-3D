@@ -368,7 +368,13 @@ jobs:
           env['PATH']=str(pathlib.Path(env['SYSTEMROOT'])/'System32')+';'+env['SYSTEMROOT']
           results=[]
           def invoke(args,data):
-              return subprocess.run([exe,*args],input=data,capture_output=True,env=env,timeout=40)
+              try:
+                  return subprocess.run([exe,*args],input=data,capture_output=True,env=env,timeout=40)
+              except OSError as e:
+                  if getattr(e,'winerror',None)==4551:
+                      (root/'build/ci-paint-verification.json').write_text(json.dumps(dict(status='blocked',reason=str(e),passed=0)))
+                      raise SystemExit('Execution blocked by Windows Application Control; no repeated attempts')
+                  raise
           def inspect(data):
               p=invoke(['--inspect-stdin'],data)
               return p,json.loads(p.stdout)
@@ -573,6 +579,182 @@ jobs:
            data=mutate_zip(paint_model(),extras={'../ignored.txt':'x'})
            j=painted(data,valid=False);assert 'Ruta ZIP' in j['error'],j
           check('ambiguous_archive_path_rejected',unsafe_path)
+          # Volumetric reconstruction: generated in memory, no fixture files.
+          def volume_command(mode='partition',**kwargs):
+           return dict(op='split-paint',mode=mode,resolution=5,**kwargs)
+          def volume_result(data=None,mode='partition',**kwargs):
+           return edit(paint_model() if data is None else data,[volume_command(mode,**kwargs)])
+          def conserved(j):
+           pieces=j['current']['pieces']
+           assert len(pieces)>=2 and math.isclose(sum(p['signed_volume'] for p in pieces),16000,abs_tol=1e-6),j
+           assert all(p['signed_volume']>0 and p['degenerate_triangles']==0 and p['material_count']==1 and p['styled_triangles']==p['triangles'] for p in pieces),j
+           return pieces
+          def partition_volume():
+           pieces=conserved(volume_result())
+           assert len(pieces)==3 and sorted(p['signed_volume'] for p in pieces)==[125,7875,8000],pieces
+           assert len({(p['materials'][0]['resource'],p['materials'][0]['property']) for p in pieces})==2
+          check('volume_partition_disconnected_and_labels',partition_volume)
+          def insert_volume():
+           pieces=conserved(volume_result(mode='inserts',depth=6))
+           cores=[p for p in pieces if p['materials'][0]['property']==0]
+           assert len(cores)==2 and math.isclose(sum(p['signed_volume'] for p in cores),2000,abs_tol=1e-6),pieces
+           assert all('Nucleo' in p['materials'][0]['name'] for p in cores)
+          check('volume_inserts_cavities_and_core_depth',insert_volume)
+          def volume_exports(mode):
+           commands=[volume_command(mode,depth=6)] if mode=='inserts' else [volume_command()]
+           initial=edit(paint_model(),commands)
+           commands += [dict(op='export',piece=p['id']) for p in initial['current']['pieces']]
+           j=edit(paint_model(),commands);total=0
+           assert len(j['exports'])==len(initial['current']['pieces'])
+           for item in j['exports']:
+            total+=expect(base64.b64decode(item['stl_base64']))['signed_volume']
+           assert math.isclose(total,16000,abs_tol=1e-4),total
+          for mode in ('partition','inserts'):
+           check('volume_export_'+mode,lambda mode=mode:volume_exports(mode))
+          def volume_history():
+           j=edit(paint_model(),[volume_command(),dict(op='undo'),dict(op='redo')])
+           assert j['states'][2]['undo']==0 and j['states'][2]['redo']==1
+           assert j['states'][1]['pieces']==j['states'][3]['pieces']
+           assert j['states'][1]['selected']==j['states'][3]['selected']
+          check('volume_atomic_undo_redo',volume_history)
+          def volume_reject(name,command,fragment,data=None,prior=False):
+           def run():
+            commands=([volume_command(),dict(op='undo')] if prior else [])+[command]
+            j=edit(paint_model() if data is None else data,commands,False)
+            assert fragment in j['error'],j
+            assert j['current']['undo']==0 and len(j['current']['pieces'])==1,j
+            if prior:assert j['current']['redo']==1,j
+           check(name,run)
+          volume_reject('volume_failed_preserves_redo',dict(op='split-paint',mode='partition',resolution=.0001),'64 celdas',prior=True)
+          volume_reject('volume_missing_resolution',dict(op='split-paint',mode='partition'),'resolution')
+          volume_reject('volume_invalid_mode',volume_command('unknown'),'Modo requerido')
+          volume_reject('volume_zero_resolution',dict(op='split-paint',mode='partition',resolution=0),'positivas')
+          volume_reject('volume_depth_below_cell_error',volume_command('inserts',depth=1),'error espacial')
+          volume_reject('volume_depth_without_core',volume_command('inserts',depth=100),'no deja un nucleo')
+          volume_reject('volume_reject_lost_color',dict(op='split-paint',mode='partition',resolution=100),'elimina un color')
+          volume_reject('volume_requires_complete_connector',volume_command(connector={}),'parametros numericos del conector')
+          volume_reject('volume_unresolved_palette',volume_command(),'colores resueltos',paint_model(palette=False))
+          volume_reject('volume_no_labels',volume_command(),'colores resueltos',cube)
+          volume_reject('volume_vertex_gradient',volume_command(),'interpolados',color_model(combined=True,partial=True))
+          volume_reject('volume_work_budget',dict(op='split-paint',mode='partition',resolution=1),'100 millones',paint_model(full_tree(7)))
+          def volume_reflection():
+           normal=conserved(volume_result())
+           flipped=conserved(volume_result(data=paint_model(reflect=True)))
+           assert sorted(round(p['signed_volume'],5) for p in normal)==sorted(round(p['signed_volume'],5) for p in flipped)
+          check('volume_reflection_barycentrics',volume_reflection)
+          # Automatic connectors on reconstructed regions.
+          region_spec=dict(diameter=1,depth=1,clearance=.2,wall=.25)
+          def connected_command(mode='partition',spec=None):
+           return dict(op='split-paint',mode=mode,resolution=5,depth=6,connector=region_spec if spec is None else spec)
+          def connected_result(mode='partition',spec=None,data=None,extra=None):
+           return edit(paint_model() if data is None else data,[connected_command(mode,spec)]+(extra or []))
+          def connected_links(j):
+           return [l for report in j['connector_reports'] for l in report['connections'] if l['connected']]
+          def nominal(j,spec=region_spec,expected=16000):
+           links=connected_links(j);assert links,j
+           area=lambda r:32*r*r*math.sin(2*math.pi/64)
+           for l in links:
+            assert math.isclose(l['added_volume'],area(spec['diameter']/2)*spec['depth'],rel_tol=1e-6),l
+            assert math.isclose(l['removed_volume'],area((spec['diameter']+spec['clearance'])/2)*(spec['depth']+spec['clearance']/2),rel_tol=1e-6),l
+            assert math.isclose(sum(x*x for x in l['normal']),1,abs_tol=1e-8),l
+           delta=sum(l['added_volume']-l['removed_volume'] for l in links)
+           assert math.isclose(sum(p['signed_volume'] for p in j['current']['pieces']),expected+delta,abs_tol=1e-5),j
+           return links
+          check('region_connector_partition_nominal_dimensions',lambda:nominal(connected_result()))
+          def connected_inserts():
+           j=connected_result('inserts');nominal(j)
+           skipped=[l for l in j['connector_reports'][0]['connections'] if not l['connected']]
+           assert skipped and any('Recorrido recto' in l['reason'] for l in skipped),j
+           original=volume_result(mode='inserts',depth=6)['current']['pieces']
+           affected={l[k] for l in connected_links(j) for k in ('donor_piece','receiver_piece')}
+           for before,after in zip(original,j['current']['pieces']):
+            if after['id'] not in affected:
+             assert before['signed_volume']==after['signed_volume'] and before['triangles']==after['triangles'],(before,after)
+          check('region_connector_inserts_skips_blocked_keeps_others',connected_inserts)
+          def region_exports(mode):
+           initial=connected_result(mode);nominal(initial)
+           commands=[dict(op='export',piece=p['id']) for p in initial['current']['pieces']]
+           j=connected_result(mode,extra=commands);volumes=0
+           for item in j['exports']:volumes+=expect(base64.b64decode(item['stl_base64']))['signed_volume']
+           assert math.isclose(volumes,sum(p['signed_volume'] for p in initial['current']['pieces']),abs_tol=1e-4)
+          for mode in ('partition','inserts'):
+           check('region_connector_export_'+mode,lambda mode=mode:region_exports(mode))
+          def region_history():
+           j=connected_result(extra=[dict(op='undo'),dict(op='redo')])
+           assert j['states'][1]['pieces']==j['states'][3]['pieces']
+           assert j['states'][2]['undo']==0 and j['states'][2]['redo']==1
+           assert j['current']['connector']['enabled'] and j['current']['connector']['diameter']==1
+          check('region_connector_history_atomic',region_history)
+          def zero_gap():
+           spec=dict(region_spec,clearance=0);j=connected_result(spec=spec);links=nominal(j,spec)
+           assert all(math.isclose(l['added_volume'],l['removed_volume'],abs_tol=1e-7) for l in links)
+          check('region_connector_zero_clearance',zero_gap)
+          def no_wall_fit():
+           j=connected_result(spec=dict(region_spec,wall=10))
+           assert not connected_links(j),j
+           assert j['connector_reports'][0]['connections'] and all(not l['connected'] for l in j['connector_reports'][0]['connections'])
+           baseline=volume_result()['current']['pieces']
+           assert [(p['signed_volume'],p['triangles']) for p in baseline]==[(p['signed_volume'],p['triangles']) for p in j['current']['pieces']]
+          check('region_connector_insufficient_wall_reported_unchanged',no_wall_fit)
+          def disconnected_regions():
+           j=connected_result(data=color_model(combined=True))
+           assert j['connector_reports'][0]['connections']==[] and len(j['current']['pieces'])==2,j
+           assert math.isclose(sum(p['signed_volume'] for p in j['current']['pieces']),16000,abs_tol=1e-6)
+          check('region_connector_disconnected_no_spurious_pin',disconnected_regions)
+          check('region_connector_reflection',lambda:nominal(connected_result(data=paint_model(reflect=True))))
+          def same_rgb_regions():
+           data=mutate_zip(paint_model(),extras={'Metadata/project_settings.config':json.dumps({'filament_colour':['#FF0000','#FF0000']})})
+           j=connected_result(data=data);nominal(j)
+           assert len({(p['materials'][0]['resource'],p['materials'][0]['property']) for p in j['current']['pieces']})==2
+          check('region_connector_same_rgb_distinct_materials',same_rgb_regions)
+          for name,spec,fragment in (
+            ('zero_diameter',dict(region_spec,diameter=0),'invalidos'),
+            ('negative_wall',dict(region_spec,wall=-1),'invalidos'),
+            ('oversized_depth',dict(region_spec,depth=100),'fuera de escala')):
+           volume_reject('region_connector_invalid_'+name,connected_command(spec=spec),fragment,prior=True)
+          volume_reject('region_connector_requires_object',connected_command(spec=3),'Conector JSON')
+          def region_budget():
+           j=edit(paint_model(),[connected_command()],False,limits=dict(bytes=5000))
+           assert 'presupuesto' in j['error'] and j['current']['undo']==0 and len(j['current']['pieces'])==1,j
+           assert not j.get('connector_reports'),j
+          check('region_connector_failed_commit_no_partial_report',region_budget)
+          def region_multiple_reports():
+           j=edit(paint_model(),[connected_command(),dict(op='undo'),connected_command()])
+           assert len(j['connector_reports'])==2 and j['connector_reports'][0]['step']==1 and j['connector_reports'][1]['step']==3
+           a=j['connector_reports'][0]['connections'][0];b=j['connector_reports'][1]['connections'][0]
+           assert a['connected'] and b['connected'] and a['donor_piece']!=b['donor_piece']
+           assert a['position']==b['position'] and math.isclose(a['added_volume'],b['added_volume'],abs_tol=1e-6)
+          check('region_connector_multiple_operations_reports',region_multiple_reports)
+          def octa_model():
+           vv=[(10,0,0),(-10,0,0),(0,10,0),(0,-10,0),(0,0,10),(0,0,-10)]
+           ff=[(0,2,4),(2,1,4),(1,3,4),(3,0,4),(2,0,5),(1,2,5),(3,1,5),(0,3,5)]
+           vs='<vertices>'+''.join(f'<vertex x="{x}" y="{y}" z="{z}"/>' for x,y,z in vv)+'</vertices>'
+           ts='<triangles>'+''.join(f'<triangle v1="{a}" v2="{b}" v3="{c}" pid="1" p1="{int(i>=4)}"/>' for i,(a,b,c) in enumerate(ff))+'</triangles>'
+           return mutate_zip(color_model(combined=True),lambda xml:re.sub(r'<vertices>.*?</vertices>',lambda _:vs,re.sub(r'<triangles>.*?</triangles>',lambda _:ts,xml)))
+          def oblique_exterior():
+           command=connected_command();command['resolution']=2.5
+           j=edit(octa_model(),[command]);nominal(j,expected=4000/3)
+           commands=[command]+[dict(op='export',piece=p['id']) for p in j['current']['pieces']]
+           exported=edit(octa_model(),commands)
+           for item in exported['exports']:
+            data=base64.b64decode(item['stl_base64'])
+            for i in range(struct.unpack_from('<I',data,80)[0]):
+             coordinates=struct.unpack_from('<9f',data,84+50*i+12)
+             assert all(sum(abs(c) for c in coordinates[k:k+3])<=10+1e-5 for k in (0,3,6))
+          check('region_connector_oblique_exterior_preserved',oblique_exterior)
+          def cylindrical_rings():
+           initial=connected_result();link=nominal(initial)[0]
+           j=connected_result(extra=[dict(op='export',piece=link['donor_piece']),dict(op='export',piece=link['receiver_piece'])])
+           for item,depth,radius in ((j['exports'][0],1,.5),(j['exports'][1],1.1,.6)):
+            data=base64.b64decode(item['stl_base64']);ring=set();n=link['normal'];p=link['position']
+            for i in range(struct.unpack_from('<I',data,80)[0]):
+             coords=struct.unpack_from('<9f',data,84+50*i+12)
+             for k in (0,3,6):
+              q=[coords[k+t]-p[t] for t in range(3)];projection=sum(q[t]*n[t] for t in range(3))
+              radial=math.sqrt(max(0,sum(x*x for x in q)-projection*projection))
+              if abs(projection-depth)<1e-5 and abs(radial-radius)<1e-5:ring.add(tuple(round(v,6) for v in coords[k:k+3]))
+            assert len(ring)>=60,(len(ring),depth,radius)
+          check('region_connector_exported_pin_socket_rings',cylindrical_rings)
           (root/'build/ci-paint-verification.json').write_text(json.dumps({'passed':sum(x['ok'] for x in results),'total':len(results),'cases':results},indent=2))
           print(json.dumps({'passed':sum(x['ok'] for x in results),'total':len(results),'failed':[x for x in results if not x['ok']]}))
           assert all(x['ok'] for x in results)

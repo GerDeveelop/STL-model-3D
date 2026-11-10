@@ -163,7 +163,7 @@ void applyPaint(std::span<const unsigned char> data,stlcut::Mesh& mesh,std::stop
     }
     if(mesh.paintedTriangles) {
         mesh.unsupportedAppearance=true; // Reading paint is not volumetric reconstruction.
-        mesh.warnings.push_back("Pintura decodificada en regiones superficiales; la malla original no se subdivide. Insertos y particion volumetrica aun pendientes.");
+        mesh.warnings.push_back("Pintura decodificada en regiones superficiales; la malla original no se subdivide. La construccion de volumen es una operacion separada con resolucion y profundidad explicitas.");
         if(mesh.unresolvedPaintFacets)mesh.warnings.push_back("Hay regiones de pintura sin filamento/color heredado resoluble; no se les asigna un color inventado.");
     }
 }

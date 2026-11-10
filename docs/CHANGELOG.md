@@ -1,5 +1,13 @@
 # Registro de cambios
 
+## 2026-11-09 — Conectores entre regiones 0.3.4 en aceptación
+
+Conectores opcionales en partición/insertos; búsqueda sobre facetas, cilindros de guarda, nominales y delta de volumen, separación, colisiones y recorrido recto conservador. Omisiones explícitas por pareja, informes JSON asociados a IDs de sesión y GUI con resumen; publicación por historial transaccional. Release/ZIP completados; dos casos preliminares ejecutados. La batería final de 72 casos quedó bloqueada antes de arrancar por Windows 4551; no se declara aprobada. Paquete solo estático: CRC/inventario/hashes/licencia y exe idéntico al bloqueado. Workflow preparado con 18 casos nuevos y detención al primer 4551. Sin revisión visual, dependencias nuevas, fuentes/carpetas de pruebas ni cambios de seguridad. Sin commit/push ni CI remota nueva. Contrato en REGION_CONNECTORS.md.
+
+## 2026-11-09 — Volúmenes desde pintura 0.3.3 local
+
+Dos modos seleccionables: partición completa por color exterior más cercano e insertos de profundidad configurable con núcleo sin color asignado. Resolución por celdas explícita; exterior recortado contra el sólido fuente, interfaces internas escalonadas. Componentes/cavidades, validación previa de cierre/volumen/exportación float32, transacción de historial y cancelación. Controles GUI y CLI `split-paint`. Release y 54/54 comprobaciones inline correctas; ZIP con inventario/hashes y **32+54** comprobaciones con PATH mínimo correctas. Workflow ampliado con 18 casos; sin fuentes de pruebas ni dependencias nuevas. Conectores de estas interfaces y reparación pendientes. Sin revisión visual, commit/push ni nueva CI; contrato en PAINT_VOLUME.md.
+
 ## 2026-11-08 — Publicación 0.3.2 y CI satisfactoria
 
 Publicados en main los incrementos acumulados como d2a219a, con autorización del usuario; modelos privados, prueba.stl y build/ excluidos. Añadida la batería inline completa de 36 casos de pintura al workflow, además de 32 comprobaciones generales. Ejecución CI 7 satisfactoria en todas las etapas y artefacto windows-x64-7 disponible. Evidencia, entorno y hashes en CI.md. El bloqueo local de Windows permanece y no se cambió su protección. Sin revisión visual ni instalador final; insertos/partición volumétrica pendientes.
