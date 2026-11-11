@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(STLCutStudioAI VERSION 0.3.6 LANGUAGES C CXX)
+project(STLCutStudioAI VERSION 0.3.7 LANGUAGES C CXX)
 if(MSVC)
     if(CMAKE_CL_SHOWINCLUDES_PREFIX MATCHES "^Nota: inclusi")
         # The local Spanish-only compiler emits UTF-8; CMake's probe can decode
@@ -63,7 +63,7 @@ set_target_properties(lib3mf PROPERTIES
     IMPORTED_LOCATION "${LIB3MF_ROOT}/Bin/lib3mf.dll"
     INTERFACE_INCLUDE_DIRECTORIES "${LIB3MF_ROOT}/Bindings/Cpp")
 add_library(stlcut_core STATIC core/io/StlReader.cpp core/io/MeshReader.cpp
-    core/io/StlWriter.cpp core/io/ZipParts.cpp core/io/PaintCodec.cpp core/cutting/PlaneCut.cpp core/cutting/ColorSplit.cpp core/cutting/PaintVolume.cpp core/cutting/RegionConnectors.cpp core/projects/EditHistory.cpp)
+    core/io/StlWriter.cpp core/io/ZipParts.cpp core/io/PaintCodec.cpp core/cutting/PlaneCut.cpp core/cutting/ColorSplit.cpp core/cutting/PaintVolume.cpp core/cutting/RegionConnectors.cpp core/projects/EditHistory.cpp core/mesh/SurfaceIndex.cpp core/mesh/MeshFeasibility.cpp)
 target_link_libraries(stlcut_core PUBLIC lib3mf PRIVATE manifold stlcut_miniz)
 target_compile_definitions(stlcut_core PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
 set_target_properties(stlcut_core PROPERTIES AUTOMOC OFF AUTOUIC OFF)

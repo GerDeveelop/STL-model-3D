@@ -1,6 +1,8 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
-**Versión del documento:** 1.11
+**Versión del documento:** 1.12
+
+**Incremento local 0.3.7 en aceptación:** diagnóstico por instancia, índice espacial y consulta indexada en reconstrucción. Sigue la priorización aprobada para selección interactiva; clic/región conectada/resaltado/extracción dirigida no están implementados todavía. Compilado; primer arranque del binario final bloqueado con 4551. Sin ampliación automática de límites ni seguridad modificada. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md). Sin publicación ni CI remota nueva.
 
 **Estado vigente 0.3.6 (2026-11-10):** 0.3.5/0.3.6 publicados en main, código 8798204 y generador corregido a31f398. CI 10 satisfactoria: build/paquete, **32+92 comprobaciones CPU correctas** y artefacto. Aceptación de parámetros y normales completada remotamente; **revisión gráfica de la corrección/MSAA aún pendiente**, bloqueo local sin modificar. [CI.md](CI.md), [VIEWER.md](VIEWER.md). No se cierra la fase 0.3; las notas siguientes conservan estados históricos.
 

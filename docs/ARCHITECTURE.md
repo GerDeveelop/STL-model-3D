@@ -1,5 +1,7 @@
 # Arquitectura y decisiones
 
+> Incremento local 0.3.7: MeshFeasibility y SurfaceIndex sin Qt ni dependencias nuevas. Filtro exacto por instancia; BVH sobre facetas expandidas conserva procedencia y compara con referencia exhaustiva. PaintVolume usa presupuesto real de visitas/evaluaciones, manteniendo topes de reconstrucción. GUI/CLI exponen diagnóstico de solo lectura. Release compilado; aceptación final pendiente por 4551. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md).
+
 > Publicación 0.3.5/0.3.6 aceptada por CI 10 en a31f398: 32+92 casos CPU, build y paquete correctos. Se valida el estado de parámetros y normales; la imagen nueva/MSAA/shaders no se certifican mediante la batería sin ventana. Bloqueo local sin alterar. [CI.md](CI.md).
 
 > Corrección local 0.3.6: normal double por cara fuente en prepareViewMesh, compartida por las hojas de pintura y flat en shaders; MSAA solicitado y clipping adaptativo. Sin cambios del núcleo geométrico ni fuentes. Compilada; ejecución final bloqueada por Windows 4551, resultado GPU pendiente. [VIEWER.md](VIEWER.md).

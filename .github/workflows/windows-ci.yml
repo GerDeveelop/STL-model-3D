@@ -636,7 +636,7 @@ jobs:
           volume_reject('volume_unresolved_palette',volume_command(),'colores resueltos',paint_model(palette=False))
           volume_reject('volume_no_labels',volume_command(),'colores resueltos',cube)
           volume_reject('volume_vertex_gradient',volume_command(),'interpolados',color_model(combined=True,partial=True))
-          volume_reject('volume_work_budget',dict(op='split-paint',mode='partition',resolution=1),'100 millones',paint_model(full_tree(7)))
+          check('volume_indexed_queries_replace_cartesian_work_rejection',lambda:conserved(edit(paint_model(full_tree(7)),[dict(op='split-paint',mode='partition',resolution=1)])))
           def volume_reflection():
            normal=conserved(volume_result())
            flipped=conserved(volume_result(data=paint_model(reflect=True)))
@@ -844,6 +844,92 @@ jobs:
            assert j['view_zero_normal_vertices']==3 and j['view_nonfinite_normal_vertices']==0
            assert j['degenerate_triangles']==1 and j['view_vertices']==3
           check('viewer_degenerate_source_not_silently_repaired',degenerate_normal)
+          # Feasibility screening and indexed nearest surfaces.
+          def feasibility(data):
+           p=invoke(['--inspect-feasibility-stdin'],data);j=json.loads(p.stdout)
+           assert p.returncode==0 and j['ok'] and j['exact_coordinate_screening'] and not j['source_modified'],j
+           return j['instances']
+          def spatial(data,points,valid=True,**kwargs):
+           p=invoke(['--inspect-spatial-stdin',json.dumps(dict(points=points,**kwargs))],data);j=json.loads(p.stdout)
+           assert j['ok']==valid and p.returncode==(0 if valid else 1),j
+           return j
+          def feasibility_cube():
+           f=feasibility(cube)[0]
+           assert f['triangles']==12 and f['closed_oriented'] and f['positive_volume'] and f['surface_components']==1,f
+           assert f['signed_volume']==1 and f['unresolved_facets']==12 and f['current_reconstruction_budget']
+          check('feasibility_closed_cube_without_invented_color',feasibility_cube)
+          def independent_instances():
+           fs=feasibility(color_model())
+           assert len(fs)==2 and all(f['closed_oriented'] and f['positive_volume'] and f['triangles']==12 for f in fs),fs
+          check('feasibility_touching_instances_screened_separately',independent_instances)
+          def disconnected_shells():
+           f=feasibility(color_model(combined=True))[0]
+           assert f['surface_components']==2 and f['signed_volume']==16000 and f['closed_oriented'],f
+          check('feasibility_disconnected_surface_components',disconnected_shells)
+          for name,ff,field in (
+            ('open',faces[:-1],'boundary_edges'),
+            ('duplicate',faces+faces[:1],'nonmanifold_edges'),
+            ('flipped',[tuple(reversed(faces[0]))]+faces[1:],'inconsistent_edges'),
+            ('degenerate',faces+[(0,0,1)],'degenerate_triangles')):
+           def defect(ff=ff,field=field):
+            f=feasibility(stl(f=ff))[0];assert f[field]>0 and not f['closed_oriented'],f
+           check('feasibility_'+name,defect)
+          def negative_volume():
+           f=feasibility(stl(f=[tuple(reversed(t)) for t in faces]))[0]
+           assert f['closed_oriented'] and not f['positive_volume'] and f['signed_volume']==-1
+          check('feasibility_inward_orientation_reported',negative_volume)
+          def paint_screen():
+           f=feasibility(paint_model())[0]
+           assert f['triangles']==24 and f['surface_facets']==25 and f['unresolved_facets']==0 and f['materials']==2,f
+          check('feasibility_paint_expansion_accounted',paint_screen)
+          check('feasibility_unresolved_palette_reported',lambda: (lambda f: (_ for _ in ()).throw(AssertionError(f)) if f['unresolved_facets']!=2 else None)(feasibility(paint_model(palette=False))[0]))
+          def cube_distances():
+           j=spatial(cube,[[.5,.5,.5],[2,.5,.5],[-1,-1,-1],[0,0,0]],verify=True)
+           assert all(math.isclose(h['distance'],d,abs_tol=1e-10) for h,d in zip(j['hits'],[.5,1,math.sqrt(3),0])),j
+           assert j['verified_exhaustive'] and j['facets']==12 and j['index_bytes']<256*1024*1024
+          check('spatial_cube_analytic_distances',cube_distances)
+          def triangle_distances():
+           data=stl(v=[(0,0,0),(1,0,0),(0,1,0)],f=[(0,1,2)])
+           j=spatial(data,[[.25,.25,1],[2,0,0],[0,0,0],[.5,.5,0]],verify=True)
+           assert [h['distance'] for h in j['hits']]==[1,1,0,0]
+          check('spatial_face_edge_vertex_queries',triangle_distances)
+          def random_reference():
+           rng=random.Random(7162);points=[[rng.uniform(-20,80),rng.uniform(-10,30),rng.uniform(-10,30)] for _ in range(80)]
+           j=spatial(paint_model('48443'),points,verify=True);assert len(j['hits'])==80 and j['verified_exhaustive']
+          check('spatial_paint_random_exhaustive_reference',random_reference)
+          def material_tie():
+           j=spatial(color_model(),[[20,10,10]],verify=True)
+           assert j['hits'][0]['distance']==0 and j['hits'][0]['material']==0,j
+           _,info=inspect(color_model())
+           for i in info['instances']:
+            filtered=spatial(color_model(),[[20,10,10]],instance=i['id'],verify=True)
+            assert filtered['hits'][0]['instance']==i['id'] and filtered['facets']==12
+          check('spatial_material_tie_and_instance_identity',material_tie)
+          def sparse_acceleration():
+           vv=[];ff=[]
+           for k in range(64):
+            offset=len(vv);vv += [(x+3*k,y,z) for x,y,z in verts];ff += [tuple(i+offset for i in t) for t in faces]
+           j=spatial(stl(vv,ff),[[.5,.5,.5],[90.5,.5,.5],[189.5,.5,.5]],verify=True)
+           assert j['triangle_tests']<j['brute_triangle_tests']*.35 and j['verified_exhaustive'],j
+          check('spatial_sparse_geometry_reduces_triangle_tests',sparse_acceleration)
+          def large_instance():
+           vv=[];ff=[]
+           for k in range(10000):
+            offset=len(vv);vv += [(x+3*k,y,z) for x,y,z in verts];ff += [tuple(i+offset for i in t) for t in faces]
+           data=stl(vv,ff);f=feasibility(data)[0]
+           assert f['triangles']==120000 and f['surface_components']==10000 and f['closed_oriented'] and not f['current_reconstruction_budget'],f
+           j=spatial(data,[[.5,.5,.5],[15000.5,.5,.5],[29997.5,.5,.5]],verify=True)
+           assert j['facets']==120000 and j['triangle_tests']<j['brute_triangle_tests']*.05,j
+          check('spatial_large_instance_screening_and_index',large_instance)
+          def query_failure(name,points,fragment,**kwargs):
+           def run():
+            j=spatial(cube,points,False,**kwargs);assert fragment in j['error'],j
+           check(name,run)
+          query_failure('spatial_actual_work_budget',[[.5,.5,.5]],'presupuesto',work=1)
+          query_failure('spatial_unknown_instance',[[0,0,0]],'Instancia desconocida',instance=99999)
+          query_failure('spatial_empty_points',[],'1024')
+          query_failure('spatial_nonnumeric_point',[[0,'x',0]],'no finito')
+          query_failure('spatial_point_numeric_range',[[1e200,0,0]],'rango numerico')
           (root/'build/ci-paint-verification.json').write_text(json.dumps({'passed':sum(x['ok'] for x in results),'total':len(results),'cases':results},indent=2))
           print(json.dumps({'passed':sum(x['ok'] for x in results),'total':len(results),'failed':[x for x in results if not x['ok']]}))
           assert all(x['ok'] for x in results)

@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 2026-11-10 — Base de viabilidad y consultas espaciales 0.3.7 local
+
+Orden de selección aprobado y documentado. Diagnóstico por instancia de topología exacta/volumen/colores/presupuestos y componentes de superficie; trabajador GUI de solo lectura y CLI. SurfaceIndex BVH con procedencia, consultas deterministas y referencia exhaustiva; PaintVolume cambia barrido completo por consulta indexada con presupuesto real. Sin ampliar topes geométricos ni dependencias. Preliminar 109/112; corregida acumulación del volumen. Release final compilado, primer arranque bloqueado por 4551, sin reintentos alternativos. Referencia independiente del modelo privado, fuente intacta. Preparados 32+113 casos, pendiente aceptación final y medición real C++; clic/resaltado aún no construidos. Sin publicación/CI nueva. SURFACE_FEASIBILITY.md.
+
 ## 2026-11-10 — Publicación y aceptación CPU 0.3.6
 
 0.3.5/0.3.6 publicados en 8798204 y corrección de generador inline a31f398 (restringir atributo x para no modificar pindex). CI 10 aprobó build/paquete y **32+92 casos**. CI 9 había aprobado 32+90, con dos rechazos de datos sintéticos por ese índice decimal. Código del visor sin cambios entre ambas ejecuciones. Aceptación CPU y de parámetros completada, con nitidez/MSAA/shaders todavía pendientes de revisión gráfica y bloqueo local intacto. Artefacto y hashes en CI.md; sin modelos privados ni instalador final publicados.

@@ -1,5 +1,7 @@
 # CI Windows x64
 
+> 0.3.7 local: workflow preparado con 32+113 casos, incluidos viabilidad e índice y una instancia sintética de 120 000 caras. El caso que antes esperaba rechazo por celdas×facetas ahora exige la reconstrucción correcta con consultas indexadas; los límites de caras/facetas siguen vigentes. Batería final no ejecutada por bloqueo 4551; sin nueva publicación/CI. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md).
+
 ## Publicación y aceptación CPU 0.3.5–0.3.6 — 2026-11-10 (Colombia)
 
 Usuario autorizó subir ambos incrementos y validar código/regresiones. Publicación inicial 8798204b32a3cec4f669775eb98e19f407d968d7; corrección del generador inline en a31f3986cead51c57f7a42d3c23f77a496a43fd4. [CI 10](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42948952405) completada **success** en todas las etapas: dependencias verificadas, Release/paquete, **32/32** casos generales y **92/92** de pintura/volumen/conectores/historial/normales. Incluye los 13 casos de parámetros y siete de normales del visor; cubre facetas pequeñas, escalas, subdivisión, reflexión y degeneración sin reparación. El paquete se ejecutó con PATH mínimo y carpeta con espacios/ñ; inventario de 75 archivos más manifiesto, CRC, tamaños y hashes correctos. **La batería no abre una ventana: no acredita resultado gráfico, MSAA, shaders ni percepción de nitidez.** La revisión visible corregida y el bloqueo local siguen pendientes, sin cambios de seguridad.

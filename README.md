@@ -1,5 +1,7 @@
 # STL Cut Studio AI
 
+**Incremento local 0.3.7 en aceptación:** diagnóstico por instancia y búsqueda de superficies mediante índice espacial BVH, integrada en la reconstrucción. Primer paso del orden aprobado para selección por clic; clic/resaltado aún pendientes. Release compilado, pero Windows bloqueó el primer arranque del binario final. No se ampliaron límites de extracción ni se modificaron fuentes. [Contrato y evidencia](docs/SURFACE_FEASIBILITY.md). Sin publicación/CI nueva de este incremento.
+
 **Estado 0.3.6 publicado (2026-11-10):** 0.3.5/0.3.6 subidos a main; [CI 10](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42948952405) aprobó compilación, paquete y **124 comprobaciones CPU** (32+92). Normales estables y parámetros de historial aceptados dentro del alcance probado. **La revisión visual de nitidez/MSAA sigue pendiente** por bloqueo local, sin alterar seguridad. [Evidencia y límites](docs/VIEWER.md). Las notas locales siguientes son históricas.
 
 **Incremento local 0.3.5:** modo, resolución y profundidad de reconstrucción forman parte del historial; Deshacer/Rehacer restaura los controles. CLI añade paint-settings y paint_volume en el estado. Release y 85/85 aceptaciones inline correctas. [Contrato del historial](docs/HISTORY.md). Sin publicación ni nueva CI remota de este incremento; la versión publicada siguiente sigue siendo 0.3.4.

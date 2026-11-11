@@ -1,5 +1,7 @@
 # Reconstrucción volumétrica por color — incremento 0.3.3
 
+> Incremento local 0.3.7 en aceptación: búsqueda de material próximo mediante BVH y presupuesto de trabajo real. Sustituye el rechazo por producto celdas×facetas descrito abajo, conservando límites de caras/facetas, malla, celdas y conectores. Empates por mínimo global de distancia y material, independientes del orden. No habilita aún extracción del modelo de 355 208 caras. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md).
+
 > Incremento local 0.3.5: los parámetros de reconstrucción ya forman parte del historial y se recuperan en la interfaz; la limitación de controles no recuperados de las secciones siguientes es histórica. Contrato y aceptación en [HISTORY.md](HISTORY.md). Sin cambios del algoritmo volumétrico ni nuevas garantías geométricas.
 
 > Publicación/aceptación posterior completadas: ambos modos y conectores 0.3.4 se publicaron en dbacc4a; CI 8 aprobó build/paquete, 32 casos generales y 72 de pintura/volumen/conectores. Evidencia y límites vigentes en [REGION_CONNECTORS.md](REGION_CONNECTORS.md) y [CI.md](CI.md). Se conserva la distinción de resultados locales/remotos.

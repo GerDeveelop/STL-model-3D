@@ -8,6 +8,8 @@
 #include "MeshView.h"
 #include "ModelImport.h"
 #include "core/io/PaintCodec.h"
+#include "core/mesh/SurfaceIndex.h"
+#include "core/mesh/MeshFeasibility.h"
 
 #include <QAction>
 #include <QApplication>
@@ -301,6 +303,47 @@ int editSession(const QString& text)
     return code;
 }
 
+QJsonObject feasibilityJson(const stlcut::Mesh& mesh,std::stop_token stop={})
+{
+    QElapsedTimer timer;timer.start();QJsonArray instances;
+    for(const auto& f:stlcut::meshFeasibility(mesh,stop))instances.append(QJsonObject{
+        {"instance",static_cast<qint64>(f.instance)},{"triangles",static_cast<qint64>(f.triangles)},
+        {"surface_facets",static_cast<qint64>(f.surfaceFacets)},{"unresolved_facets",static_cast<qint64>(f.unresolvedFacets)},
+        {"materials",static_cast<qint64>(f.materials)},{"topology_analyzed",f.topologyAnalyzed},
+        {"closed_oriented",f.topologyAnalyzed?QJsonValue(f.closedOriented):QJsonValue(QJsonValue::Null)},
+        {"signed_volume",f.topologyAnalyzed?QJsonValue(f.volume):QJsonValue(QJsonValue::Null)},
+        {"positive_volume",f.topologyAnalyzed?QJsonValue(f.positiveVolume):QJsonValue(QJsonValue::Null)},
+        {"surface_components",static_cast<qint64>(f.components)},{"degenerate_triangles",static_cast<qint64>(f.degenerate)},
+        {"boundary_edges",static_cast<qint64>(f.boundaryEdges)},{"nonmanifold_edges",static_cast<qint64>(f.nonmanifoldEdges)},
+        {"inconsistent_edges",static_cast<qint64>(f.inconsistentEdges)},{"current_reconstruction_budget",f.currentReconstructionBudget},
+        {"reason",QString::fromStdString(f.reason)}});
+    return {{"instances",instances},{"elapsed_ms",timer.nsecsElapsed()/1e6},{"exact_coordinate_screening",true},{"self_intersections_checked",false},{"source_modified",false}};
+}
+QJsonObject spatialJson(const stlcut::Mesh& mesh,const QString& text)
+{
+    QJsonParseError error;const auto doc=QJsonDocument::fromJson(text.toUtf8(),&error);
+    if(error.error!=QJsonParseError::NoError||!doc.isObject())throw std::runtime_error("Se requiere objeto JSON de consulta espacial.");
+    const auto req=doc.object();std::optional<std::uint32_t> instance;
+    auto integer=[](QJsonValue v,double max){const auto d=v.toDouble(-1);if(!v.isDouble()||!std::isfinite(d)||d<0||d>max||std::floor(d)!=d)throw std::runtime_error("Entero espacial invalido.");return static_cast<std::uint32_t>(d);};
+    if(req.contains("instance"))instance=integer(req.value("instance"),4294967295.);
+    stlcut::SurfaceWork indexed,brute;
+    if(req.contains("work")){indexed.limit=integer(req.value("work"),100000000);brute.limit=indexed.limit;}
+    if(!indexed.limit)throw std::runtime_error("Presupuesto espacial debe ser positivo.");
+    if(req.contains("verify")&&!req.value("verify").isBool())throw std::runtime_error("verify debe ser booleano.");
+    if(!req.value("points").isArray()||req.value("points").toArray().isEmpty()||req.value("points").toArray().size()>1024)throw std::runtime_error("Indique entre 1 y 1024 puntos espaciales.");
+    QElapsedTimer timer;timer.start();stlcut::SurfaceIndex index(stlcut::surfaceData(mesh,instance));const double buildMs=timer.nsecsElapsed()/1e6;
+    double indexedMs=0,bruteMs=0;QJsonArray hits;const bool verify=req.value("verify").toBool();
+    for(const auto& value:req.value("points").toArray()) {
+        if(!value.isArray()||value.toArray().size()!=3)throw std::runtime_error("Punto espacial requiere tres numeros.");
+        const auto a=value.toArray();for(const auto& v:a)if(!v.isDouble()||!std::isfinite(v.toDouble()))throw std::runtime_error("Punto espacial no finito o no numerico.");
+        const stlcut::Vec3 p{a[0].toDouble(),a[1].toDouble(),a[2].toDouble()};timer.restart();const auto hit=index.nearest(p,indexed);indexedMs+=timer.nsecsElapsed()/1e6;
+        if(verify){timer.restart();const auto reference=index.nearest(p,brute,{},true);bruteMs+=timer.nsecsElapsed()/1e6;if(std::abs(hit.distance-reference.distance)>std::max(1e-10,std::abs(reference.distance)*1e-10)||hit.facet!=reference.facet)throw std::runtime_error("La consulta indexada difiere de la referencia exhaustiva.");}
+        hits.append(QJsonObject{{"distance",hit.distance},{"material",hit.material},{"source_triangle",static_cast<qint64>(hit.sourceTriangle)},{"instance",static_cast<qint64>(hit.instance)},{"facet",static_cast<qint64>(hit.facet)}});
+    }
+    return {{"hits",hits},{"facets",static_cast<qint64>(index.facets())},{"nodes",static_cast<qint64>(index.nodes())},{"index_bytes",static_cast<qint64>(index.bytes())},
+        {"node_visits",static_cast<qint64>(indexed.nodes)},{"triangle_tests",static_cast<qint64>(indexed.triangles)},{"brute_triangle_tests",static_cast<qint64>(brute.triangles)},
+        {"build_ms",buildMs},{"query_ms",indexedMs},{"reference_ms",bruteMs},{"verified_exhaustive",verify},{"source_modified",false}};
+}
 // Useful for local automation: same production reader, JSON over redirected stdout.
 // No GUI, no source-file changes and no auxiliary files are required.
 int inspect(int argc, char* argv[])
@@ -336,6 +379,10 @@ int inspect(int argc, char* argv[])
             std::cout<<QJsonDocument(result).toJson(QJsonDocument::Compact).constData()<<'\n';return 0;
         }
         if(args.size()==3&&args[1]==QStringLiteral("--edit-stdin"))return editSession(args[2]);
+        if((args.size()==2&&args[1]==QStringLiteral("--inspect-feasibility-stdin"))||(args.size()==3&&args[1]==QStringLiteral("--inspect-spatial-stdin"))) {
+            mesh=readStdin();result=args[1]==QStringLiteral("--inspect-feasibility-stdin")?feasibilityJson(mesh):spatialJson(mesh,args[2]);
+            result.insert("ok",true);std::cout<<QJsonDocument(result).toJson(QJsonDocument::Compact).constData()<<'\n';return 0;
+        }
         if (args.size() == 2 && (args[1] == QStringLiteral("--inspect-stdin")||args[1] == QStringLiteral("--inspect-view-stdin"))) {
             mesh = readStdin();
         } else if (args.size() == 3 && args[1] == QStringLiteral("--inspect")) {
@@ -488,6 +535,8 @@ public:
         form->addRow(cutButton_);connect(cutButton_,&QPushButton::clicked,this,[this]{startCut();});
         splitMaterials_=new QPushButton(QStringLiteral("Separar cuerpos por material / color"),cutting);
         form->addRow(splitMaterials_);connect(splitMaterials_,&QPushButton::clicked,this,[this]{startMaterialSplit();});
+        auto* feasibility=new QPushButton(QStringLiteral("Analizar viabilidad por instancia"),cutting);
+        form->addRow(feasibility);connect(feasibility,&QPushButton::clicked,this,[this]{startFeasibility();});
         paintMode_=new QComboBox(cutting);
         paintMode_->addItems({QStringLiteral("Partición completa por color"),QStringLiteral("Insertos y núcleo sin color asignado")});
         form->addRow(QStringLiteral("Volumen desde pintura"),paintMode_);
@@ -827,6 +876,21 @@ private:
         });
         worker_->start();
     }
+    void startFeasibility() {
+        if(worker_||history_.empty())return;const auto source=history_.selected()->mesh;
+        auto report=std::make_shared<QJsonObject>();job_=std::make_shared<ImportJob>();const auto job=job_;
+        worker_=QThread::create([source,report,job]{try{*report=feasibilityJson(*source,job->cancellation.get_token());}catch(const stlcut::ImportCancelled&){job->cancelled=true;}catch(const std::exception& e){job->error=QString::fromUtf8(e.what());}});
+        worker_->setParent(this);open_->setEnabled(false);updateHistoryActions();cancel_->setText(QStringLiteral("Cancelar diagnóstico (Ctrl+.)"));cancel_->setEnabled(true);cancel_->show();progress_->show();
+        outcome_->setText(QStringLiteral("Analizando topología y límites por instancia; la sesión se conserva…"));
+        connect(worker_,&QThread::finished,this,[this,job,report]{
+            worker_->wait();worker_->deleteLater();worker_=nullptr;
+            if(job->cancelled||job->cancellation.stop_requested())outcome_->setText(QStringLiteral("Diagnóstico cancelado; sesión conservada."));
+            else if(!job->error.isEmpty())outcome_->setText(QStringLiteral("No se completó el diagnóstico: %1").arg(job->error));
+            else {QString text=QStringLiteral("Diagnóstico preliminar por coordenadas exactas; no certifica ausencia de autointersecciones ni repara la malla.");
+                for(const auto& value:report->value("instances").toArray()){const auto f=value.toObject();text+=QStringLiteral("\nInstancia %1: %2 caras, %3 facetas de color; %4").arg(f.value("instance").toInteger()).arg(f.value("triangles").toInteger()).arg(f.value("surface_facets").toInteger()).arg(f.value("reason").toString());}outcome_->setText(text);}
+            job_.reset();open_->setEnabled(true);cancel_->hide();progress_->hide();updateHistoryActions();
+        });worker_->start();
+    }
     void startMaterialSplit(bool paint=false) {
         if(worker_||history_.empty()||!history_.selectedIsActive())return;
         const stlcut::PaintVolumeSpec paintSpec{paintMode_->currentIndex()==1?stlcut::PaintVolumeMode::Inserts:stlcut::PaintVolumeMode::Partition,paintResolution_->value(),paintDepth_->value()};
@@ -952,7 +1016,7 @@ private:
 
 int main(int argc, char* argv[])
 {
-    if (argc > 1 && (std::strcmp(argv[1], "--inspect-stdin") == 0 || std::strcmp(argv[1], "--inspect-view-stdin") == 0 ||
+    if (argc > 1 && (std::strcmp(argv[1], "--inspect-stdin") == 0 || std::strcmp(argv[1], "--inspect-view-stdin") == 0 || std::strcmp(argv[1], "--inspect-feasibility-stdin") == 0 || std::strcmp(argv[1], "--inspect-spatial-stdin") == 0 ||
                      std::strcmp(argv[1], "--decode-paint") == 0 || std::strcmp(argv[1], "--decode-paint-stdin") == 0 || std::strcmp(argv[1], "--inspect") == 0 || std::strcmp(argv[1], "--cut-stdin") == 0 || std::strcmp(argv[1], "--edit-stdin") == 0)) {
         return inspect(argc, argv);
     }

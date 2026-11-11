@@ -2,6 +2,7 @@
 #include "PlaneCut.h"
 #include "core/io/MeshReader.h"
 #include "core/io/StlWriter.h"
+#include "core/mesh/SurfaceIndex.h"
 #include <manifold/manifold.h>
 #include <algorithm>
 #include <cmath>
@@ -16,27 +17,6 @@ Vec3 sub(Vec3 a,Vec3 b){return {a.x-b.x,a.y-b.y,a.z-b.z};}
 Vec3 add(Vec3 a,Vec3 b){return {a.x+b.x,a.y+b.y,a.z+b.z};}
 Vec3 mul(Vec3 a,double b){return {a.x*b,a.y*b,a.z*b};}
 double dot(Vec3 a,Vec3 b){return a.x*b.x+a.y*b.y+a.z*b.z;}
-// Closest point on a triangle, including edge and vertex Voronoi regions.
-double distance2(Vec3 p,const Triangle& t) {
-    const auto a=t.vertices[0],b=t.vertices[1],c=t.vertices[2];
-    const auto ab=sub(b,a),ac=sub(c,a),ap=sub(p,a);
-    const double d1=dot(ab,ap),d2=dot(ac,ap);
-    if(d1<=0&&d2<=0)return dot(ap,ap);
-    const auto bp=sub(p,b);const double d3=dot(ab,bp),d4=dot(ac,bp);
-    if(d3>=0&&d4<=d3)return dot(bp,bp);
-    const double vc=d1*d4-d3*d2;
-    if(vc<=0&&d1>=0&&d3<=0){const auto q=sub(p,add(a,mul(ab,d1/(d1-d3))));return dot(q,q);}
-    const auto cp=sub(p,c);const double d5=dot(ab,cp),d6=dot(ac,cp);
-    if(d6>=0&&d5<=d6)return dot(cp,cp);
-    const double vb=d5*d2-d1*d6;
-    if(vb<=0&&d2>=0&&d6<=0){const auto q=sub(p,add(a,mul(ac,d2/(d2-d6))));return dot(q,q);}
-    const double va=d3*d6-d5*d4;
-    if(va<=0&&(d4-d3)>=0&&(d5-d6)>=0){const auto q=sub(p,add(b,mul(sub(c,b),(d4-d3)/((d4-d3)+(d5-d6)))));return dot(q,q);}
-    const double denominator=va+vb+vc;
-    if(!(denominator>0))throw std::runtime_error("Pintura contiene una region degenerada.");
-    const auto q=sub(p,add(a,add(mul(ab,vb/denominator),mul(ac,vc/denominator))));return dot(q,q);
-}
-struct Facet {Triangle triangle;int material;};
 }
 std::vector<Mesh> splitPaintVolume(const Mesh& mesh,const PaintVolumeSpec& spec,std::stop_token stop,const ConnectorSpec* connector,std::vector<RegionConnection>* connections) {
     auto check=[&]{if(stop.stop_requested())throw ImportCancelled{};};check();
@@ -61,29 +41,23 @@ std::vector<Mesh> splitPaintVolume(const Mesh& mesh,const PaintVolumeSpec& spec,
     std::array<int,3> n;const double dims[]={dimensions.x,dimensions.y,dimensions.z};
     for(int k=0;k<3;++k)n[k]=std::max(1,static_cast<int>(std::ceil(dims[k]/spec.resolution)));
     const std::size_t cells=static_cast<size_t>(n[0])*n[1]*n[2];
-    std::vector<Facet> facets;std::vector<bool> painted(mesh.triangles.size());std::set<int> labels;
+    auto expandedData=surfaceData(mesh,{},stop);std::set<int> labels;
     auto normalize=[&](Vec3 p){return mul(sub(p,origin),1/extent);};
-    auto append=[&](Triangle t,int material) {
-        if(material<0||static_cast<size_t>(material)>=mesh.materials.size())fail("Color superficial ausente o invalido.");
-        for(auto& p:t.vertices){p=normalize(p);if(!std::isfinite(p.x)||!std::isfinite(p.y)||!std::isfinite(p.z))fail("Coordenadas superficiales invalidas.");}
+    for(const auto& facet:expandedData.facets) {
+        check();const auto& t=facet.triangle;const auto material=facet.material;
+        if(material<0||static_cast<size_t>(material)>=mesh.materials.size()) {
+            const auto& m=mesh.styles[facet.sourceTriangle].material;
+            if(m[0]!=m[1]||m[0]!=m[2])fail("Colores interpolados por vertice no admitidos para reconstruccion.");
+            fail("Color superficial ausente o invalido.");
+        }
         const auto a=sub(t.vertices[1],t.vertices[0]),b=sub(t.vertices[2],t.vertices[0]);
         const double area=dot(a,a)*dot(b,b)-dot(a,b)*dot(a,b);
         if(area<=1e-24)fail("Region pintada demasiado pequena o degenerada.");
-        facets.push_back({t,material});labels.insert(material);
-    };
-    for(const auto& f:mesh.paintFacets) {
-        check();if(f.sourceTriangle>=mesh.triangles.size())fail("Referencia de pintura fuera de rango.");
-        painted[f.sourceTriangle]=true;Triangle t;const auto& source=mesh.triangles[f.sourceTriangle];
-        for(int j=0;j<3;++j){const auto b=f.barycentric.vertices[j];t.vertices[j]=add(mul(source.vertices[0],b.x),add(mul(source.vertices[1],b.y),mul(source.vertices[2],b.z)));}
-        append(t,f.material);
+        labels.insert(material);
     }
-    for(size_t i=0;i<mesh.triangles.size();++i)if(!painted[i]) {
-        check();const auto& m=mesh.styles[i].material;
-        if(m[0]!=m[1]||m[0]!=m[2])fail("Colores interpolados por vertice no admitidos para reconstruccion.");
-        append(mesh.triangles[i],m[0]);
-    }
-    if(facets.empty()||facets.size()>100000||labels.size()>64)fail("Reconstruccion limitada a 100000 superficies y 64 materiales.");
-    if(cells>262144||cells>100000000/facets.size())fail("Resolucion supera 100 millones de evaluaciones superficie/celda; aumente el tamano de celda.");
+    if(expandedData.facets.empty()||expandedData.facets.size()>100000||labels.size()>64)fail("Reconstruccion limitada a 100000 superficies y 64 materiales.");
+    if(cells>262144)fail("Reconstruccion supera 262144 celdas.");
+    SurfaceIndex index(std::move(expandedData),stop);SurfaceWork work;
     const double h[]={dims[0]/extent/n[0],dims[1]/extent/n[1],dims[2]/extent/n[2]};
     const double error=std::hypot(h[0],h[1],h[2])*extent/2;
     if(spec.mode==PaintVolumeMode::Inserts&&spec.depth<=error)fail("Profundidad menor o igual al error espacial de la celda; refine la resolucion.");
@@ -92,12 +66,8 @@ std::vector<Mesh> splitPaintVolume(const Mesh& mesh,const PaintVolumeSpec& spec,
     std::vector<int> grid(cells);std::map<int,std::vector<manifold::Manifold>> boxes;
     for(int z=0;z<n[2];++z)for(int y=0;y<n[1];++y)for(int x=0;x<n[0];++x) {
         check();const Vec3 p{(x+.5)*h[0],(y+.5)*h[1],(z+.5)*h[2]};
-        double best=std::numeric_limits<double>::infinity();int material=-1;
-        for(size_t i=0;i<facets.size();++i) {
-            if((i&1023)==0)check();const auto& f=facets[i];const double d=distance2(p,f.triangle);
-            if(d<best-1e-15||(std::abs(d-best)<=1e-15&&(material<0||f.material<material))){best=d;material=f.material;}
-        }
-        if(spec.mode==PaintVolumeMode::Inserts&&std::sqrt(best)*extent>spec.depth)material=-1;
+        const auto hit=index.nearest(add(origin,mul(p,extent)),work,stop);int material=hit.material;
+        if(spec.mode==PaintVolumeMode::Inserts&&hit.distance>spec.depth)material=-1;
         grid[(static_cast<size_t>(z)*n[1]+y)*n[0]+x]=material;
     }
     std::size_t runs=0;
