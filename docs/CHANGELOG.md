@@ -1,5 +1,15 @@
 # Registro de cambios
 
+## 2026-11-09 — Corrección visual 0.3.6 en aceptación
+
+Incidencia de moteado 3MF confirmada en ventana 0.3.5 y corrección autorizada. Normales double por cara fuente, heredadas por subdivisiones de pintura; evita normales cero debidas al umbral absoluto de QVector3D::normalized. MSAA 4x solicitado con soporte real informado, rango near/far adaptativo y retirada de polygon offset global. Geometría/fuentes intactas. Release compilado; primer intento CPU bloqueado por Windows 4551, sin eludirlo. Análisis independiente reproduce la causa; no equivale a aceptación C++/GPU. Siete casos adicionales preparados (32+92 totales), sin ejecución final ni publicación/CI nueva. VIEWER.md.
+
+Validación del paquete local 0.3.5: **32+85 comprobaciones correctas**, con PATH mínimo y carpeta con espacios/ñ; inventario/CRC/hashes verificados. Sin revisión visual ni publicación/CI remota nueva. Evidencia y checksum en HISTORY.md.
+
+## 2026-11-09 — Historial de reconstrucción 0.3.5 local
+
+EditState conserva modo, resolución y profundidad de inserto; GUI restaura controles con señales bloqueadas y habilita profundidad según modo. CLI paint-settings edita borrador sin operación geométrica y expone paint_volume en estados. split-paint publica sus parámetros tras commit satisfactorio; fallos preservan borrador y Rehacer. El presupuesto incluye el estado ampliado por sizeof. Release y 85/85 aceptaciones inline correctas (13 nuevas). Sin nuevas dependencias, fuentes/carpetas de pruebas, revisión visual ni publicación/CI nueva. Contrato en HISTORY.md.
+
 ## 2026-11-09 — Publicación y aceptación CI 0.3.4
 
 Tras autorización, 0.3.3/0.3.4 publicados en main dbacc4a. CI 8 completó build/paquete, **32/32 comprobaciones generales y 72/72 de pintura/volumen/conectores** y artefacto windows-x64-8. Resuelta la aceptación remota pendiente; el bloqueo local permanece documentado sin modificar seguridad. Sin revisión visual ni cierre de fase. Evidencia y hashes en CI.md.

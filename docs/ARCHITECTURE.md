@@ -1,5 +1,9 @@
 # Arquitectura y decisiones
 
+> Corrección local 0.3.6: normal double por cara fuente en prepareViewMesh, compartida por las hojas de pintura y flat en shaders; MSAA solicitado y clipping adaptativo. Sin cambios del núcleo geométrico ni fuentes. Compilada; ejecución final bloqueada por Windows 4551, resultado GPU pendiente. [VIEWER.md](VIEWER.md).
+
+> Incremento local 0.3.5: EditState contiene PaintVolumeSpec por valor, incluido automáticamente en sizeof(EditState) para presupuesto. Setter valida parámetros antes de mutar; GUI restaura con señales bloqueadas, CLI publica parámetros de split-paint tras commit sobre candidato. Sin nuevas dependencias ni cambios del motor geométrico. [HISTORY.md](HISTORY.md).
+
 > Incremento 0.3.4 publicado y aceptado en CI 8: RegionConnectors sin Qt ni dependencias nuevas recibe regiones inmutables y devuelve mallas/diagnósticos. Guardas, nominales, barridos conservadores y validación STL preceden commitSplit. Integrado en PaintVolume, GUI y CLI. Build/paquete y 32+72 casos correctos sobre dbacc4a; bloqueo local sin modificar. Contrato en [REGION_CONNECTORS.md](REGION_CONNECTORS.md), evidencia en [CI.md](CI.md).
 
 > Incremento local 0.3.3 (2026-11-09): `core/cutting/PaintVolume`, sin Qt ni dependencias nuevas, clasifica celdas por cercanía a facetas de color y recorta contra el sólido original con Manifold. Dos modos explícitos, componentes/cavidades, validación STL previa y publicación por `commitSplit` desde trabajador GUI o CLI. Contrato y límites en [PAINT_VOLUME.md](PAINT_VOLUME.md). Las descripciones de reconstrucción pendiente siguientes corresponden a incrementos anteriores.

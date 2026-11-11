@@ -37,6 +37,12 @@ Ampliación posterior aprobada: miniz 3.1.0 MIT, descarga fijada por SHA-256 y l
 
 ## Documentación y autorización
 
+- 2026-11-10: usuario autorizó publicar 0.3.5 y 0.3.6 y validar código/regresiones en CI. La revisión gráfica nueva permanece pendiente por bloqueo local; no se autoriza cambiar ni eludir seguridad. Las notas de ausencia de publicación siguientes son históricas.
+
+- Incidencia visual aprobada por el usuario: 0.3.6 local corrige normales de facetas pequeñas/pintura y mejora MSAA/profundidad; revisión visible autorizada para esta incidencia. docs/VIEWER.md. Release compilado; primera ejecución bloqueada con 4551, no eludir protección. Aceptación dinámica/visual pendiente. La construcción del historial 0.3.5 se conserva.
+
+- Continuación de fase autorizada: incremento local 0.3.5 para conservar parámetros de reconstrucción en historial/CLI y restaurar controles; docs/HISTORY.md. Sin nuevas dependencias ni revisión visual. La autorización anterior de publicación 0.3.3/0.3.4 ya fue completada; no implica publicar automáticamente incrementos posteriores.
+
 - Publicación 0.3.3/0.3.4 completada en main dbacc4a y CI 8 satisfactoria (32+72 casos, build/paquete). Se completó la aceptación remota pendiente. El bloqueo local 4551 no se modificó ni se debe eludir. Véanse docs/CI.md y docs/REGION_CONNECTORS.md; los estados de no publicación/aceptación pendiente siguientes son históricos.
 
 - Publicación posterior autorizada por el usuario: subir juntos 0.3.3 y 0.3.4 a GitHub y completar su validación en CI Windows. La restricción de no publicar de las notas siguientes describe el estado previo a esta autorización. No se autoriza cambiar ni eludir la política de seguridad local.

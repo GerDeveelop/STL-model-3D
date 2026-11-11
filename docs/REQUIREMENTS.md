@@ -1,5 +1,9 @@
 # Requisitos de fase 0.1
 
+> Incidencia visual 0.3.6 aprobada: corregir moteado de normales cero en facetas pequeñas y mejorar antialiasing/profundidad preservando el 3MF. Release compilado, análisis independiente confirma causa; C++/GPU nuevos pendientes por bloqueo 4551. No se atribuyen aceptaciones previas al nuevo exe. [VIEWER.md](VIEWER.md).
+
+> Incremento local 0.3.5: Deshacer/Rehacer recupera modo, resolución y profundidad de reconstrucción. Editar controles no crea un paso geométrico; fallos conservan parámetros/Redo. Release y 85 casos inline correctos; sin revisión visual ni nueva CI. Contrato en [HISTORY.md](HISTORY.md).
+
 > Estado 0.3.4 publicado y aceptado en CI 8: conectores entre regiones con guardas y recorrido conservador. Build/paquete y 32+72 casos correctos sobre dbacc4a. Se mantienen los límites de colocación/ensamblaje y el bloqueo local sin modificar. Evidencia en [CI.md](CI.md), contrato en [REGION_CONNECTORS.md](REGION_CONNECTORS.md). Las menciones de aceptación pendiente siguientes son históricas.
 
 > Incremento local 0.3.3 (2026-11-09): ambos modos de volumen desde pintura incorporados con resolución configurable, insertos con profundidad y núcleo sin color asignado. Interfaces internas aproximadas por celdas; conectores para esas interfaces pendientes. Release y 54 comprobaciones locales de pintura/volumen correctas. Detalle y presupuestos en [PAINT_VOLUME.md](PAINT_VOLUME.md); las menciones de pendientes anteriores son históricas.

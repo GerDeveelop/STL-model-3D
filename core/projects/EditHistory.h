@@ -1,5 +1,6 @@
 #pragma once
 #include "core/cutting/PlaneCut.h"
+#include "core/cutting/PaintVolume.h"
 #include <memory>
 #include <cstdint>
 #include <string>
@@ -21,6 +22,7 @@ struct EditState {
     bool planeVisible{true};
     ConnectorSpec connector;
     bool connectorEnabled{};
+    PaintVolumeSpec paintVolume;
 };
 struct HistoryLimits {
     std::uint64_t bytes=1024ULL*1024*1024;
@@ -42,6 +44,7 @@ public:
     void select(PieceId id);
     void setPlane(Plane plane,bool visible=true);
     void setConnector(ConnectorSpec connector,bool enabled);
+    void setPaintVolume(PaintVolumeSpec);
     CutCommit commitCut(std::shared_ptr<const Mesh> positive,std::shared_ptr<const Mesh> negative,
                         std::uint64_t positivePresentationBytes=0,std::uint64_t negativePresentationBytes=0);
     std::vector<PieceId> commitSplit(const std::vector<std::shared_ptr<const Mesh>>& pieces,

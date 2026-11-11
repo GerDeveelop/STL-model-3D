@@ -1,5 +1,7 @@
 # Conectores entre regiones reconstruidas — 0.3.4
 
+> Incremento local 0.3.5: modo/resolución/profundidad del inserto ya se conservan en historial y se restauran con sus controles; sustituye esa limitación del texto siguiente. No cambia los conectores ni sus límites geométricos. Véase [HISTORY.md](HISTORY.md).
+
 > Aceptación remota completada tras autorización de publicación: commit dbacc4a y [CI 8](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42751423136), **32+72 comprobaciones correctas**, build/paquete y artefacto satisfactorios. Los estados de bloqueo local siguientes se conservan como evidencia histórica y no se consideran pruebas aprobadas localmente. Sin cambios en seguridad ni revisión visual. Entorno/hashes en [CI.md](CI.md).
 
 Fecha local: 2026-11-09. Continuación autorizada de fase 0.3. Sin dependencias nuevas, instalación global, IA, publicación ni revisión visual. Se conserva el contrato de reconstrucción de [PAINT_VOLUME.md](PAINT_VOLUME.md).

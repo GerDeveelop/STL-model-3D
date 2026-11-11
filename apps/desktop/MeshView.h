@@ -22,11 +22,12 @@ struct ViewMesh {
     float floor{-1};
     stlcut::Vec3 center;
     double scale{1};
+    std::size_t legacyZeroNormalTriangles{};
 };
 
 // Presentation adapter only: does not modify core mesh coordinates or statistics.
 std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh,
-                                              std::stop_token stop = {});
+                                              std::stop_token stop = {},bool auditLegacyNormals = false);
 
 class MeshView final : public QOpenGLWidget, protected QOpenGLFunctions {
     Q_OBJECT
@@ -62,6 +63,7 @@ private:
     bool ready_{};
     bool meshDrawable_{};
     bool uploadPending_{};
+    bool qualityPending_{true};
     bool grid_{true};
     bool axes_{true};
     bool autoFit_{true};

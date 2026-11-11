@@ -25,9 +25,21 @@ constexpr float radians = std::numbers::pi_v<float> / 180.f;
 constexpr float halfFov = 22.5f * radians;
 ViewVertex vertex(const QVector3D& p, const QVector3D& n = {})
 { return {p.x(), p.y(), p.z(), n.x(), n.y(), n.z()}; }
+QVector3D sourceNormal(const stlcut::Triangle& t,double scale)
+{
+    const auto& a=t.vertices[0];const auto& b=t.vertices[1];const auto& c=t.vertices[2];
+    const double ux=(b.x-a.x)/scale,uy=(b.y-a.y)/scale,uz=(b.z-a.z)/scale;
+    const double vx=(c.x-a.x)/scale,vy=(c.y-a.y)/scale,vz=(c.z-a.z)/scale;
+    const double x=uy*vz-uz*vy,y=uz*vx-ux*vz,z=ux*vy-uy*vx;
+    const double length=std::hypot(x,y,z);
+    if(!std::isfinite(length))throw std::runtime_error("Normal de presentacion fuera de rango.");
+    // Do not use QVector3D::normalized(): its absolute fuzzy-zero threshold
+    // turns small, valid face cross products into unlit zero normals.
+    return length>0?QVector3D(static_cast<float>(x/length),static_cast<float>(y/length),static_cast<float>(z/length)):QVector3D{};
+}
 }
 
-std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::stop_token stop)
+std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::stop_token stop,bool auditLegacyNormals)
 {
     if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
     auto result = std::make_shared<ViewMesh>();
@@ -47,14 +59,14 @@ std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::s
     const auto displayCount=mesh.triangles.size()+mesh.paintFacets.size()-mesh.paintedTriangles;
     if(displayCount>stlcut::maxTriangles)throw std::runtime_error("Presentacion de pintura supera 2 millones de caras.");
     result->vertices.reserve(displayCount*3);
-    auto emitTriangle=[&](const stlcut::Triangle& triangle,const std::array<std::int32_t,3>& labels,bool unresolved=false) {
+    auto emitTriangle=[&](const stlcut::Triangle& triangle,const std::array<std::int32_t,3>& labels,const QVector3D& normal,bool unresolved=false) {
         if(stop.stop_requested())throw stlcut::ImportCancelled{};
         QVector3D p[3];
         for(size_t i=0;i<3;++i) {
             const auto& v=triangle.vertices[i];
             p[i]={static_cast<float>((v.x-center.x)/scale*2),static_cast<float>((v.y-center.y)/scale*2),static_cast<float>((v.z-center.z)/scale*2)};
         }
-        const auto normal=QVector3D::crossProduct(p[1]-p[0],p[2]-p[0]).normalized();
+        if(auditLegacyNormals&&QVector3D::crossProduct(p[1]-p[0],p[2]-p[0]).normalized().isNull())++result->legacyZeroNormalTriangles;
         for(size_t j=0;j<3;++j) {
             auto item=vertex(p[j],normal);const auto label=labels[j];
             if(label>=0&&static_cast<size_t>(label)<mesh.materials.size()) {
@@ -66,6 +78,7 @@ std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::s
     size_t paintIndex=0,painted=0;
     for(size_t i=0;i<mesh.triangles.size();++i) {
         const auto& source=mesh.triangles[i];
+        const auto normal=sourceNormal(source,scale);
         if(paintIndex<mesh.paintFacets.size()&&mesh.paintFacets[paintIndex].sourceTriangle<i)
             throw std::runtime_error("Pintura fuera de orden respecto a la fuente.");
         if(paintIndex<mesh.paintFacets.size()&&mesh.paintFacets[paintIndex].sourceTriangle==i) {
@@ -76,9 +89,9 @@ std::shared_ptr<const ViewMesh> prepareViewMesh(const stlcut::Mesh& mesh, std::s
                     const auto w=facet.barycentric.vertices[j];const auto a=source.vertices[0],b=source.vertices[1],c=source.vertices[2];
                     triangle.vertices[j]={w.x*a.x+w.y*b.x+w.z*c.x,w.x*a.y+w.y*b.y+w.z*c.y,w.x*a.z+w.y*b.z+w.z*c.z};
                 }
-                emitTriangle(triangle,{facet.material,facet.material,facet.material},facet.material<0);
+                emitTriangle(triangle,{facet.material,facet.material,facet.material},normal,facet.material<0);
             }
-        } else emitTriangle(source,mesh.styles.size()==mesh.triangles.size()?mesh.styles[i].material:std::array<std::int32_t,3>{-1,-1,-1});
+        } else emitTriangle(source,mesh.styles.size()==mesh.triangles.size()?mesh.styles[i].material:std::array<std::int32_t,3>{-1,-1,-1},normal);
     }
     if(paintIndex!=mesh.paintFacets.size()||painted!=mesh.paintedTriangles)throw std::runtime_error("Pintura no coincide con la fuente de presentacion.");
     if (stop.stop_requested()) { throw stlcut::ImportCancelled{}; }
@@ -95,6 +108,7 @@ MeshView::MeshView(QWidget* parent) : QOpenGLWidget(parent)
     format.setVersion(3, 3);
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setDepthBufferSize(24);
+    format.setSamples(4); // Requested; actual framebuffer support is reported.
     setFormat(format);
     setToolTip(QStringLiteral("Izquierdo: orbitar · Derecho/central: desplazar · Rueda: zoom · F: encuadrar"));
 }
@@ -147,13 +161,13 @@ void MeshView::initializeGL()
         layout(location=1) in vec3 normal;
         layout(location=2) in vec3 vertexColor;
         uniform mat4 mvp;
-        out vec3 faceNormal;
+        flat out vec3 faceNormal;
         out vec3 surfaceColor;
         void main() { gl_Position = mvp * vec4(position,1.0); faceNormal=normal; surfaceColor=vertexColor; }
     )";
     const char* fragmentShader = R"(
         #version 330 core
-        in vec3 faceNormal;
+        flat in vec3 faceNormal;
         in vec3 surfaceColor;
         uniform vec3 color;
         uniform bool lighting;
@@ -212,7 +226,7 @@ void MeshView::showGrid(bool show) { grid_=show; update(); }
 void MeshView::showAxes(bool show) { axes_=show; update(); }
 void MeshView::setCutPlane(stlcut::Plane plane, bool visible)
 { cutPlane_=plane; cutPlaneVisible_=visible; update(); }
-void MeshView::resizeGL(int, int) { if (autoFit_) { updateFitDistance(); } }
+void MeshView::resizeGL(int, int) { qualityPending_=true;if (autoFit_) { updateFitDistance(); } }
 
 QVector3D MeshView::eyeDirection() const
 {
@@ -230,8 +244,18 @@ void MeshView::paintGL()
     QMatrix4x4 projection;
     const float aspect=static_cast<float>(std::max(1,width()))/std::max(1,height());
     const float radius=mesh_ ? mesh_->radius : 1.75f;
-    projection.perspective(45, aspect, std::max(0.0001f,radius*0.001f),
-                           distance_ + target_.length() + radius*20 + 10);
+    const float closestDepth=distance_+QVector3D::dotProduct(target_,eyeDirection())-radius;
+    const float nearPlane=std::max(radius*.0001f,std::min(distance_*.02f,closestDepth*.5f));
+    const float farPlane=std::max(nearPlane*2,distance_+target_.length()+std::max(radius*3,4.f)+1);
+    projection.perspective(45,aspect,nearPlane,farPlane);
+    if(qualityPending_) {
+        GLint samples=0,depthBits=0;glGetIntegerv(GL_SAMPLES,&samples);glGetIntegerv(GL_DEPTH_BITS,&depthBits);
+        emit rendererStatus(QStringLiteral("OpenGL %1 · %2 · MSAA %3x · profundidad %4 bits")
+            .arg(QString::fromLatin1(reinterpret_cast<const char*>(glGetString(GL_VERSION))),QString::fromLatin1(reinterpret_cast<const char*>(glGetString(GL_RENDERER))))
+            .arg(samples).arg(depthBits));
+        qInfo()<<"STL_RENDER_QUALITY samples="<<samples<<" depth_bits="<<depthBits<<" near="<<nearPlane<<" far="<<farPlane;
+        qualityPending_=false;
+    }
     QMatrix4x4 view;
     view.lookAt(target_+eyeDirection()*distance_, target_, {0,0,1});
     program_.bind();
@@ -275,10 +299,7 @@ void MeshView::paintGL()
             attributes();
             program_.setUniformValue("lighting", true);
             program_.setUniformValue("color", QVector3D(0.28f,0.72f,0.91f));
-            glEnable(GL_POLYGON_OFFSET_FILL);
-            glPolygonOffset(1,1);
             glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(mesh_->vertices.size()));
-            glDisable(GL_POLYGON_OFFSET_FILL);
         }
         meshBuffer_.release();
     }

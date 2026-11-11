@@ -1,5 +1,27 @@
 # Cortes encadenados y Deshacer/Rehacer — 0.2.2
 
+## Parámetros de reconstrucción — incremento local 0.3.5
+
+Continuación autorizada de fase 0.3, 2026-11-09. EditState conserva PaintVolumeSpec: modo (`partition`/`inserts`), resolución y profundidad del inserto. Valores iniciales: partición, celda 1 y profundidad 2 en unidades del modelo. El presupuesto ya usa sizeof(EditState), por lo que contabiliza estos valores sin añadir buffers geométricos ni dependencias. Sesión solo en memoria; no es guardado de proyecto.
+
+La interfaz actualiza el borrador del estado actual al editar estos controles; esa edición no crea un paso ni borra Rehacer, igual que los controles de plano/conector. Al Deshacer/Rehacer, refreshScene restaura los tres valores bloqueando sus señales para no sobrescribir estados; la profundidad solo se habilita en insertos. Cambiar a partición conserva la profundidad inactiva para un posible retorno a insertos. Una importación correcta inicia valores predeterminados; una fallida conserva la sesión.
+
+JSON de estados incorpora `paint_volume` con `mode`, `resolution` y `depth`. La operación de producción `paint-settings` permite editar el borrador sin ejecutar geometría:
+
+```json
+{"commands":[{"op":"paint-settings","mode":"inserts","resolution":5,"depth":6}]}
+```
+
+Modo/resolución obligatorios; insertos requiere profundidad numérica, en partición puede omitirse para conservar la anterior. El núcleo rechaza valores no finitos/no positivos y modos inválidos antes de modificar el estado. Los límites dependientes de la malla, resolución y presupuesto del motor se comprueban al reconstruir, no al editar el borrador. Estos parámetros no convierten un STL sin colores en una entrada reconstruible.
+
+`split-paint` conserva su contrato de parámetros explícitos y publica los valores usados en el estado **resultante**, tras un commit satisfactorio sobre una copia candidata. Ante error geométrico, cancelación o rechazo por presupuesto no cambia parámetros ni elimina Rehacer. Deshacer devuelve los valores del estado anterior; Rehacer los del resultado (o de su borrador si se editaron posteriormente). En GUI, los valores editados ya forman parte del borrador anterior antes de pulsar construir; en CLI, una operación con parámetros explícitos sin `paint-settings` previo conserva los parámetros anteriores al deshacer. Los cambios de modo no crean historial por sí solos.
+
+No cambia el motor de corte/conectores ni las geometrías calculadas. Release y **85/85** casos inline correctos: 72 anteriores y 13 nuevos de valores iniciales, edición sin paso geométrico, ambos modos con undo/redo, borrador editado, fallo con Rehacer, profundidad inactiva, parámetros inválidos, rechazo por presupuesto y nueva rama de corte. Reporte `build/paint-history-inline-results.json`, compilación `build/paint-history-build.log`. Sin revisión visual, fuentes/carpetas de pruebas ni modelos privados modificados. Sin publicación ni CI remota nueva. Las aceptaciones remotas de 0.3.4 se conservan separadas en CI.md.
+
+Paquete 0.3.5: **32/32** regresiones generales y **85/85** de pintura/volumen/conectores/historial correctas, extraído a carpeta con espacios/ñ y PATH mínimo. CRC, inventario de 75 archivos más manifiesto, tamaños y hashes comprobados. Reportes `build/paint-history-package-verification.json` y `build/paint-history-package-paint-verification.json`; log `build/paint-history-package.log`.
+
+ZIP provisional `build/packages/20261110T040300794Z/STLCutStudioAI-0.3.5-portable-win-x64-20261110T040300794Z.zip`, SHA-256 `38ff49981de4d4635d2bd6cf62d9d6f43626486fd5d4c5504cc5d260681d9008`. El sufijo está en UTC; la fecha local del incremento es 2026-11-09. El exe nuevo pudo ejecutarse en esta validación sin modificar seguridad; esto no acredita un cambio/resolución global de la política que bloqueó binarios anteriores. No se realizó interacción visual ni validación de instalación/VM limpia.
+
 Fecha: 2026-11-08. Incremento aprobado por el usuario. Añade edición durante la sesión al motor Manifold existente; no añade dependencias, guardado de proyectos ni reparación de mallas.
 
 ## Uso

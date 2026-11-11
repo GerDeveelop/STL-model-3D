@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(STLCutStudioAI VERSION 0.3.4 LANGUAGES C CXX)
+project(STLCutStudioAI VERSION 0.3.6 LANGUAGES C CXX)
 if(MSVC)
     if(CMAKE_CL_SHOWINCLUDES_PREFIX MATCHES "^Nota: inclusi")
         # The local Spanish-only compiler emits UTF-8; CMake's probe can decode

@@ -1,5 +1,9 @@
 # Fase 0.3 — Conectores y separación por color 3MF
 
+## Incremento local 0.3.5 — parámetros de reconstrucción en historial
+
+Modo, resolución y profundidad incluidos en EditState y restaurados por la interfaz. CLI paint-settings para borrador y paint_volume en estados JSON. Publicación de parámetros usados tras commit satisfactorio, sin perderlos ni borrar Rehacer al fallar. Release y 85/85 casos inline correctos (72 previos y 13 nuevos). Contrato en [HISTORY.md](HISTORY.md). Este pendiente queda resuelto localmente; continúan ampliación de redes/contactos, diagnóstico/reparación y planes globales de montaje. Sin revisión visual, publicación ni CI remota nueva.
+
 ## Publicación y aceptación remota 0.3.4 completadas
 
 Usuario autorizó publicar 0.3.3/0.3.4. Commit dbacc4a en main y CI 8 satisfactorios: build/paquete, **32 comprobaciones generales y 72 de pintura/volumen/conectores correctas**. La aceptación pendiente por bloqueo local quedó completada en el runner; no se cambió la seguridad local ni se realizó revisión visual. Evidencia en [CI.md](CI.md). Continúan pendientes ampliar aceptación de redes con varias uniones generadas/curvatura, parámetros de reconstrucción en historial, diagnóstico/reparación y montaje global; no se cierra la fase.

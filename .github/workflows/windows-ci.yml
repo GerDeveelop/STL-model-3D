@@ -755,6 +755,95 @@ jobs:
               if abs(projection-depth)<1e-5 and abs(radial-radius)<1e-5:ring.add(tuple(round(v,6) for v in coords[k:k+3]))
             assert len(ring)>=60,(len(ring),depth,radius)
           check('region_connector_exported_pin_socket_rings',cylindrical_rings)
+          # Session reconstruction settings: no extra geometry/history actions.
+          default_paint=dict(mode='partition',resolution=1,depth=2)
+          def paint_setting(mode='inserts',resolution=5,depth=6):
+           return dict(op='paint-settings',mode=mode,resolution=resolution,depth=depth)
+          def paint_state_defaults():
+           j=edit(cube,[dict(op='status')])
+           assert j['current']['paint_volume']==default_paint and j['current']['undo']==0
+          check('paint_history_defaults',paint_state_defaults)
+          def paint_draft():
+           j=edit(cube,[paint_setting()])
+           assert j['current']['paint_volume']==dict(mode='inserts',resolution=5,depth=6)
+           assert j['current']['pieces']==j['states'][0]['pieces'] and j['current']['undo']==0 and j['current']['redo']==0
+          check('paint_history_settings_no_geometry_step',paint_draft)
+          def paint_split_history(mode):
+           command=volume_command(mode,depth=6)
+           j=edit(paint_model(),[command,dict(op='undo'),dict(op='redo')])
+           expected=dict(mode=mode,resolution=5,depth=6)
+           assert j['states'][0]['paint_volume']==default_paint and j['states'][2]['paint_volume']==default_paint
+           assert j['states'][1]['paint_volume']==expected and j['states'][3]['paint_volume']==expected
+           assert j['states'][1]['pieces']==j['states'][3]['pieces']
+          for mode in ('partition','inserts'):
+           check('paint_history_undo_redo_'+mode,lambda mode=mode:paint_split_history(mode))
+          def paint_draft_redo():
+           j=edit(paint_model(),[volume_command(),paint_setting(resolution=4),dict(op='undo'),dict(op='redo')])
+           assert j['states'][3]['paint_volume']==default_paint
+           assert j['current']['paint_volume']==dict(mode='inserts',resolution=4,depth=6)
+           assert j['states'][2]['undo']==1 and j['states'][2]['redo']==0
+          check('paint_history_draft_restored_without_extra_step',paint_draft_redo)
+          def paint_failed_split():
+           commands=[volume_command('inserts',depth=6),dict(op='undo'),paint_setting('partition',2,3),dict(op='split-paint',mode='inserts',resolution=.0001,depth=7)]
+           j=edit(paint_model(),commands,False)
+           assert '64 celdas' in j['error'] and j['current']['paint_volume']==dict(mode='partition',resolution=2,depth=3)
+           assert j['current']['redo']==1 and j['current']['undo']==0
+           assert j['current']['pieces']==j['states'][0]['pieces']
+          check('paint_history_failed_operation_preserves_draft_redo',paint_failed_split)
+          def paint_keep_inactive_depth():
+           j=edit(cube,[paint_setting(),dict(op='paint-settings',mode='partition',resolution=2)])
+           assert j['current']['paint_volume']==dict(mode='partition',resolution=2,depth=6)
+          check('paint_history_partition_retains_inactive_depth',paint_keep_inactive_depth)
+          for name,command,fragment in (
+            ('bad_mode',paint_setting('invalid'),'Modo requerido'),
+            ('zero_cell',paint_setting(resolution=0),'positivos'),
+            ('negative_depth',paint_setting(depth=-1),'positivos'),
+            ('nonnumeric_depth',paint_setting(depth='six'),'depth numericos')):
+           def invalid_setting(command=command,fragment=fragment):
+            j=edit(paint_model(),[volume_command(),dict(op='undo'),command],False)
+            assert fragment in j['error'] and j['current']['paint_volume']==default_paint
+            assert j['current']['undo']==0 and j['current']['redo']==1
+           check('paint_history_reject_'+name,invalid_setting)
+          def paint_failed_budget():
+           j=edit(paint_model(),[volume_command('inserts',depth=6)],False,limits=dict(bytes=5000))
+           assert 'presupuesto' in j['error'] and j['current']['paint_volume']==default_paint
+           assert j['current']['undo']==0
+          check('paint_history_failed_commit_preserves_parameters',paint_failed_budget)
+          def paint_cut_branch():
+           commands=[volume_command(),dict(op='undo'),paint_setting('inserts',4,6),dict(op='cut',normal=[0,0,1],offset=10)]
+           j=edit(paint_model(),commands)
+           assert j['current']['paint_volume']==dict(mode='inserts',resolution=4,depth=6)
+           assert j['current']['undo']==1 and j['current']['redo']==0
+          check('paint_history_new_cut_branch_keeps_draft',paint_cut_branch)
+          # Viewer normals: all data generated in memory; no GUI required.
+          def normal_view(data,expected_vertices=None,legacy_zero=False):
+           j=painted(data,view=True)
+           assert j['view_zero_normal_vertices']==0 and j['view_nonfinite_normal_vertices']==0,j
+           assert .99999<j['view_normal_length_min']<=j['view_normal_length_max']<1.00001,j
+           if expected_vertices is not None:assert j['view_vertices']==expected_vertices,j
+           if legacy_zero:assert j['view_legacy_zero_normal_triangles']>0,j
+           return j
+          check('viewer_cube_unit_normals',lambda:normal_view(cube,36))
+          def fine_facets(scale=1):
+           vv=[tuple(scale*c for c in v) for v in verts]+[tuple(scale*(20+.001*c) for c in v) for v in verts]
+           return stl(vv,faces+[tuple(i+8 for i in t) for t in faces])
+          check('viewer_tiny_valid_facets_lit',lambda:normal_view(fine_facets(),72,True))
+          for label,scale in (('small',1e-9),('large',1e9)):
+           check('viewer_normal_scale_'+label,lambda scale=scale:normal_view(fine_facets(scale),72,True))
+          def distant_body(xml):
+           def shifted(m):
+            x=float(m[1]);return 'x="'+str(x+400 if x>=40 else x)+'"'
+           return re.sub(r'x="([^"]+)"',shifted,xml)
+          def detailed_paint():
+           j=normal_view(mutate_zip(paint_model(full_tree(7)),distant_body),legacy_zero=True)
+           assert j['triangles']==24 and j['painted_triangles']==1 and j['paint_facets']==16384,j
+          check('viewer_paint_children_inherit_stable_face_normal',detailed_paint)
+          check('viewer_reflected_paint_stable_normals',lambda:normal_view(mutate_zip(paint_model('841',reflect=True),distant_body),legacy_zero=False))
+          def degenerate_normal():
+           j=painted(stl(f=[(0,0,1)]),view=True)
+           assert j['view_zero_normal_vertices']==3 and j['view_nonfinite_normal_vertices']==0
+           assert j['degenerate_triangles']==1 and j['view_vertices']==3
+          check('viewer_degenerate_source_not_silently_repaired',degenerate_normal)
           (root/'build/ci-paint-verification.json').write_text(json.dumps({'passed':sum(x['ok'] for x in results),'total':len(results),'cases':results},indent=2))
           print(json.dumps({'passed':sum(x['ok'] for x in results),'total':len(results),'failed':[x for x in results if not x['ok']]}))
           assert all(x['ok'] for x in results)

@@ -1,6 +1,10 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
-**Versión del documento:** 1.8
+**Versión del documento:** 1.10
+
+**Incidencia local 0.3.6:** corrección autorizada de normales cero en facetas pequeñas y subdivisiones, solicitud MSAA 4x y rango de profundidad adaptativo. Release compilado; primer arranque bloqueado por Windows 4551. Análisis matemático del modelo reproduce el moteado, pero aceptación dinámica y revisión gráfica nueva pendientes. [VIEWER.md](VIEWER.md). Sin publicación ni CI nueva; el historial 0.3.5 aprobado localmente sigue incluido.
+
+**Incremento local 0.3.5:** parámetros de reconstrucción incorporados al historial y recuperación de controles con Deshacer/Rehacer. Estado JSON paint_volume y edición de borrador paint-settings sin paso geométrico. Release y 85/85 aceptaciones inline correctas; [HISTORY.md](HISTORY.md). Sin publicación/CI nueva ni revisión visual. Quedan pendientes ampliación geométrica de redes/contactos y diagnóstico/reparación de fase 0.3.
 
 **Estado vigente 0.3.4 (2026-11-09):** 0.3.3/0.3.4 publicados en main dbacc4a y CI 8 satisfactoria: build/paquete, **32+72 comprobaciones correctas**, artefacto e inventario. Ambos modos de volumen y conectores locales aceptados remotamente dentro de sus límites. [CI.md](CI.md), [REGION_CONNECTORS.md](REGION_CONNECTORS.md). La política/bloqueo local no cambió; sin revisión visual ni cierre de fase. Las notas siguientes describen estados históricos.
 

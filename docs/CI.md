@@ -1,5 +1,9 @@
 # CI Windows x64
 
+> Corrección local 0.3.6: siete casos CPU de normales añadidos a los 85 de pintura/volumen/conectores/historial: previstos 32+92. Sintaxis Python comprobada; no se ejecutaron contra el exe nuevo por bloqueo 4551. Sin publicación ni CI remota nueva. MSAA/shaders/rango de profundidad requieren comprobación gráfica adicional. [VIEWER.md](VIEWER.md).
+
+> Incremento local 0.3.5: workflow preparado con 32 casos generales y 85 de pintura/volumen/conectores/historial (13 nuevos). Ambos bloques pasaron localmente sobre el paquete con PATH mínimo, inventario/CRC/hashes correctos. Sin publicación ni nueva ejecución remota; CI 8 siguiente corresponde a 0.3.4. Evidencia en [HISTORY.md](HISTORY.md).
+
 > Estado 0.3.2 publicado y validado en CI Windows: ejecución 7, commit d2a219a, build/paquete y 32 casos generales + 36 de pintura correctos. El bloqueo local 4551 no se ha cambiado; sin revisión visual. Insertos/partición volumétrica pendientes. Evidencia en [CI.md](CI.md); los resultados anteriores conservan su contexto histórico.
 
 > Actualización 2026-11-08: fase 0.1 aceptada por el usuario para continuar. Incremento 0.2 (STL/3MF, plano, corte y exportación) y evidencia vigente en [PHASE_02.md](PHASE_02.md). Los resultados fechados anteriores se conservan como historial; no acreditan validación del código nuevo ni una nueva ejecución CI.

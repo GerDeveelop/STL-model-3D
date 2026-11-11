@@ -1,5 +1,9 @@
 # STL Cut Studio AI
 
+**Corrección local 0.3.6 en aceptación:** normales estables para evitar moteado de facetas pequeñas/pintura, solicitud de antialiasing MSAA y profundidad adaptativa. Compilada, pero Windows bloqueó su arranque con 4551. Diagnóstico del modelo y límites en [VIEWER.md](docs/VIEWER.md). Resultado visual corregido aún pendiente; sin publicación ni CI nueva de 0.3.5/0.3.6.
+
+**Incremento local 0.3.5:** modo, resolución y profundidad de reconstrucción forman parte del historial; Deshacer/Rehacer restaura los controles. CLI añade paint-settings y paint_volume en el estado. Release y 85/85 aceptaciones inline correctas. [Contrato del historial](docs/HISTORY.md). Sin publicación ni nueva CI remota de este incremento; la versión publicada siguiente sigue siendo 0.3.4.
+
 **Estado vigente 0.3.4 (2026-11-09):** incrementos 0.3.3/0.3.4 publicados en main dbacc4a. [CI 8](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42751423136) satisfactoria: build/paquete, **32+72 comprobaciones correctas** y artefacto. Incluye ambos modos de volumen desde pintura y conectores locales compatibles, con omisiones explícitas. [Contrato y límites](docs/REGION_CONNECTORS.md). La aceptación remota quedó completada sin cambiar la seguridad local ni hacer revisión visual; fase 0.3 aún abierta. Los registros locales siguientes conservan su contexto histórico.
 
 **Incremento local 0.3.3 (2026-11-09):** construcción de volúmenes desde pintura con dos modos seleccionables: insertos con profundidad y partición completa, mediante celdas de resolución explícita. Release y 54 comprobaciones de pintura/volumen correctas. Contrato y límites en [PAINT_VOLUME.md](docs/PAINT_VOLUME.md). Los conectores para estas interfaces siguen pendientes. Sin publicación ni nueva CI remota; el estado 0.3.2 siguiente corresponde a la versión publicada.

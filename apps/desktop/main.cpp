@@ -140,6 +140,7 @@ QJsonObject historyJson(const stlcut::EditHistory& history)
     return {{"pieces",pieces},{"selected",static_cast<qint64>(s.selected)},
             {"plane_normal",vectorJson(s.plane.normal)},{"plane_offset",s.plane.offset},{"plane_visible",s.planeVisible},
             {"connector",QJsonObject{{"enabled",s.connectorEnabled},{"diameter",s.connector.diameter},{"depth",s.connector.depth},{"clearance",s.connector.clearance},{"wall",s.connector.wall}}},
+            {"paint_volume",QJsonObject{{"mode",s.paintVolume.mode==stlcut::PaintVolumeMode::Inserts?"inserts":"partition"},{"resolution",s.paintVolume.resolution},{"depth",s.paintVolume.depth}}},
             {"undo",static_cast<qint64>(history.undoCount())},{"redo",static_cast<qint64>(history.redoCount())},
             {"retained_bytes",static_cast<qint64>(history.retainedBytes())}};
 }
@@ -205,6 +206,18 @@ int editSession(const QString& text)
                                                          std::make_shared<const stlcut::Mesh>(std::move(cut.negative)));
                     result.insert("discarded_steps",static_cast<qint64>(commit.discardedSteps));
                 }
+            } else if(op=="paint-settings") {
+                auto spec=history->state().paintVolume;const auto mode=command.value("mode").toString();
+                if(mode!="inserts"&&mode!="partition")throw std::runtime_error("Modo requerido: inserts o partition.");
+                spec.mode=mode=="inserts"?stlcut::PaintVolumeMode::Inserts:stlcut::PaintVolumeMode::Partition;
+                if(!command.value("resolution").isDouble()||(mode=="inserts"&&!command.value("depth").isDouble()))
+                    throw std::runtime_error("Indique resolution y, para insertos, depth numericos.");
+                spec.resolution=command.value("resolution").toDouble();
+                if(command.contains("depth")) {
+                    if(!command.value("depth").isDouble())throw std::runtime_error("Profundidad invalida.");
+                    spec.depth=command.value("depth").toDouble();
+                }
+                history->setPaintVolume(spec);
             } else if(op=="split-paint") {
                 if(!history->selectedIsActive())throw std::runtime_error("Seleccione una pieza activa.");
                 stlcut::ConnectorSpec connector;const bool withConnector=command.contains("connector");
@@ -218,7 +231,7 @@ int editSession(const QString& text)
                         *values[i]=fields.value(names[i]).toDouble();
                     }
                 }
-                stlcut::PaintVolumeSpec spec;
+                auto spec=history->state().paintVolume;
                 const auto mode=command.value("mode").toString();
                 if(mode!="inserts"&&mode!="partition")throw std::runtime_error("Modo requerido: inserts o partition.");
                 spec.mode=mode=="inserts"?stlcut::PaintVolumeMode::Inserts:stlcut::PaintVolumeMode::Partition;
@@ -233,7 +246,7 @@ int editSession(const QString& text)
                 auto pieces=stlcut::splitPaintVolume(*history->selected()->mesh,spec,{},withConnector?&connector:nullptr,&connections);
                 std::vector<std::shared_ptr<const stlcut::Mesh>> meshes;
                 for(auto& mesh:pieces)meshes.push_back(std::make_shared<const stlcut::Mesh>(std::move(mesh)));
-                auto next=*history;next.setConnector(connector,withConnector);const auto ids=next.commitSplit(meshes);*history=std::move(next);
+                auto next=*history;next.setConnector(connector,withConnector);const auto ids=next.commitSplit(meshes);next.setPaintVolume(spec);*history=std::move(next);
                 if(withConnector) {
                     QJsonArray links;
                     for(const auto& link:connections) {
@@ -346,7 +359,16 @@ int inspect(int argc, char* argv[])
         }
         result = summary(mesh);
         if(args.contains(QStringLiteral("--inspect-view-stdin"))) {
-            const auto view=prepareViewMesh(mesh,{});
+            const auto view=prepareViewMesh(mesh,{},true);
+            std::size_t zeroNormals=0,nonfiniteNormals=0;double minNormal=2,maxNormal=0;
+            for(const auto& v:view->vertices) {
+                const auto length=std::hypot(v.nx,v.ny,v.nz);
+                if(!std::isfinite(length))++nonfiniteNormals;
+                else {if(length==0)++zeroNormals;minNormal=std::min(minNormal,static_cast<double>(length));maxNormal=std::max(maxNormal,static_cast<double>(length));}
+            }
+            result.insert("view_legacy_zero_normal_triangles",static_cast<qint64>(view->legacyZeroNormalTriangles));
+            result.insert("view_zero_normal_vertices",static_cast<qint64>(zeroNormals));result.insert("view_nonfinite_normal_vertices",static_cast<qint64>(nonfiniteNormals));
+            result.insert("view_normal_length_min",view->vertices.empty()?0:minNormal);result.insert("view_normal_length_max",maxNormal);
             struct ColorInfo {size_t count{};std::array<float,3> minimum{},maximum{};};
             std::map<std::array<int,3>,ColorInfo> colors;
             for(const auto& vertex:view->vertices) {
@@ -473,7 +495,9 @@ public:
         form->addRow(QStringLiteral("Tamaño máximo de celda"),paintResolution_);
         paintDepth_=new QDoubleSpinBox(cutting);paintDepth_->setDecimals(4);paintDepth_->setRange(.0001,1e6);paintDepth_->setValue(2);
         form->addRow(QStringLiteral("Profundidad del inserto"),paintDepth_);paintDepth_->setEnabled(false);
-        connect(paintMode_,qOverload<int>(&QComboBox::currentIndexChanged),this,[this](int i){paintDepth_->setEnabled(i==1);});
+        connect(paintMode_,qOverload<int>(&QComboBox::currentIndexChanged),this,[this](int i){paintDepth_->setEnabled(i==1);updatePaintVolume();});
+        connect(paintResolution_,qOverload<double>(&QDoubleSpinBox::valueChanged),this,[this]{updatePaintVolume();});
+        connect(paintDepth_,qOverload<double>(&QDoubleSpinBox::valueChanged),this,[this]{updatePaintVolume();});
         auto* paintHint=new QLabel(QStringLiteral("Interfaces escalonadas según celda; exterior recortado al original. Active la casilla de conectores para buscar pines/cavidades seguros. Se informan las uniones omitidas; no se certifica el orden global de montaje."),cutting);
         paintHint->setWordWrap(true);form->addRow(paintHint);
         splitPaint_=new QPushButton(QStringLiteral("Construir piezas desde pintura"),cutting);
@@ -678,6 +702,9 @@ private:
     void updateConnector() {
         if(!history_.empty())history_.setConnector({connectorInputs_[0]->value(),connectorInputs_[1]->value(),connectorInputs_[2]->value(),connectorInputs_[3]->value()},connectors_->isChecked());
     }
+    void updatePaintVolume() {
+        if(!history_.empty())history_.setPaintVolume({paintMode_->currentIndex()==1?stlcut::PaintVolumeMode::Inserts:stlcut::PaintVolumeMode::Partition,paintResolution_->value(),paintDepth_->value()});
+    }
     void updatePlane() {
         if(!history_.empty())history_.setPlane(plane(),preview_->isChecked());
         if(view_)view_->setCutPlane(plane(),preview_->isChecked());
@@ -722,11 +749,15 @@ private:
         if(history_.empty())return;
         const QSignalBlocker blockPieces(pieces_),bx(planeInputs_[0]),by(planeInputs_[1]),bz(planeInputs_[2]),bd(planeInputs_[3]),bp(preview_);
         const QSignalBlocker bc(connectors_),c0(connectorInputs_[0]),c1(connectorInputs_[1]),c2(connectorInputs_[2]),c3(connectorInputs_[3]);
+        const QSignalBlocker pm(paintMode_),pr(paintResolution_),pd(paintDepth_);
         pieces_->clear();
         const auto& state=history_.state();
         connectors_->setChecked(state.connectorEnabled);
         connectorInputs_[0]->setValue(state.connector.diameter);connectorInputs_[1]->setValue(state.connector.depth);
         connectorInputs_[2]->setValue(state.connector.clearance);connectorInputs_[3]->setValue(state.connector.wall);
+        paintMode_->setCurrentIndex(state.paintVolume.mode==stlcut::PaintVolumeMode::Inserts?1:0);
+        paintResolution_->setValue(state.paintVolume.resolution);paintDepth_->setValue(state.paintVolume.depth);
+        paintDepth_->setEnabled(paintMode_->currentIndex()==1);
         const auto root=history_.original();
         const bool rootActive=std::any_of(state.pieces.begin(),state.pieces.end(),[&](const auto& p){return p->id==root->id;});
         if(!rootActive)pieces_->addItem(QStringLiteral("Original (referencia)"),QVariant::fromValue<qulonglong>(root->id));
@@ -746,8 +777,8 @@ private:
     void restoreHistory(bool redo) {
         if(worker_||history_.empty())return;
         if(redo ? history_.redo():history_.undo()) {
-            refreshScene();outcome_->setText(redo ? QStringLiteral("Corte rehecho: piezas, selección y plano recuperados."):
-                QStringLiteral("Corte deshecho: piezas, selección y plano recuperados."));
+            refreshScene();outcome_->setText(redo ? QStringLiteral("Operación rehecha: piezas y parámetros recuperados."):
+                QStringLiteral("Operación deshecha: piezas y parámetros recuperados."));
         }
     }
     void startCut() {
@@ -820,7 +851,7 @@ private:
         worker_->setParent(this);open_->setEnabled(false);updateHistoryActions();
         cancel_->setText(QStringLiteral("Cancelar separación (Ctrl+.)"));cancel_->setEnabled(true);cancel_->show();progress_->show();
         outcome_->setText(paint?QStringLiteral("Reconstruyendo volúmenes por color y validando cierre, volumen y exportación…"):QStringLiteral("Separando regiones de material y comprobando cierre…"));
-        connect(worker_,&QThread::finished,this,[this,job,meshes,views,connections,paint,withConnector] {
+        connect(worker_,&QThread::finished,this,[this,job,meshes,views,connections,paint,paintSpec,withConnector] {
             worker_->wait();worker_->deleteLater();worker_=nullptr;
             if(job->cancelled||job->cancellation.stop_requested())outcome_->setText(QStringLiteral("Separación cancelada. Se conserva la sesión."));
             else if(!job->error.isEmpty())outcome_->setText(QStringLiteral("Separación descartada: %1").arg(job->error));
@@ -828,6 +859,7 @@ private:
                 auto next=history_;std::vector<std::uint64_t> bytes;
                 for(const auto& view:*views)bytes.push_back(viewBytes(*view));
                 const auto ids=next.commitSplit(*meshes,bytes);
+                if(paint)next.setPaintVolume(paintSpec);
                 auto cache=pieceViews_;for(size_t i=0;i<ids.size();++i)cache[ids[i]]=(*views)[i];
                 const auto retained=next.retainedIds();
                 std::erase_if(cache,[&](const auto& entry){return !std::binary_search(retained.begin(),retained.end(),entry.first);});

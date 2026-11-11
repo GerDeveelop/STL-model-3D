@@ -89,6 +89,13 @@ void EditHistory::setPlane(Plane plane,bool visible) {
 void EditHistory::setConnector(ConnectorSpec connector,bool enabled) {
     state();states_[cursor_].connector=connector;states_[cursor_].connectorEnabled=enabled;
 }
+void EditHistory::setPaintVolume(PaintVolumeSpec spec) {
+    state();
+    if((spec.mode!=PaintVolumeMode::Partition&&spec.mode!=PaintVolumeMode::Inserts)||
+       !std::isfinite(spec.resolution)||spec.resolution<=0||!std::isfinite(spec.depth)||spec.depth<=0)
+        throw std::runtime_error("Parametros de reconstruccion invalidos: modo, resolucion y profundidad positivos y finitos requeridos.");
+    states_[cursor_].paintVolume=spec;
+}
 CutCommit EditHistory::commitCut(std::shared_ptr<const Mesh> positive,std::shared_ptr<const Mesh> negative,
                                 std::uint64_t positiveBytes,std::uint64_t negativeBytes) {
     if(!selectedIsActive())throw std::runtime_error("El original es una referencia; seleccione una pieza activa para cortar.");

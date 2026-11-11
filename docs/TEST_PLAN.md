@@ -1,5 +1,11 @@
 # Plan de pruebas de fase 0.1
 
+> 0.3.6: siete regresiones CPU del visor preparadas (32+92 casos totales). Primer intento de ejecutar el exe bloqueado por Windows 4551; no se lanzó la batería. Compilación y análisis matemático independientes completados, resultado visual del nuevo binario pendiente. No se confunde la captura original 0.3.5 ni el análisis del XML con una aprobación C++/GPU. [VIEWER.md](VIEWER.md).
+
+> Paquete local 0.3.5 comprobado: **32+85 aceptaciones correctas**, PATH mínimo, carpeta con espacios/ñ e inventario/CRC/hashes verificados. Reportes paint-history-package-verification.json y paint-history-package-paint-verification.json dentro de build/. Sin revisión visual ni CI nueva; [HISTORY.md](HISTORY.md).
+
+> Incremento local 0.3.5: Release y **85/85** casos inline correctos, con 13 nuevos de historial de parámetros sobre los 72 previos. Valores predeterminados, edición sin geometría/paso, ambos modos undo/redo, borrador, profundidad inactiva, rechazos, preservación de Redo/estado ante fallo y presupuesto, nueva rama. Reporte build/paint-history-inline-results.json. Sin revisión visual ni CI nueva; [HISTORY.md](HISTORY.md).
+
 > Resultado remoto vigente 0.3.4: **32/32 + 72/72**, todas las etapas de CI 8 correctas sobre dbacc4a, incluido paquete con PATH mínimo. Completa la aceptación que quedó bloqueada localmente; no cambia esos resultados locales ni acredita revisión visual. Entorno, artefacto y hashes en [CI.md](CI.md).
 
 > 0.3.4: batería preparada de **72 casos** de pintura/volumen/conectores, con 18 casos nuevos. **Bloqueada antes de ejecutar por WinError 4551; ninguna aceptación final**. Dos casos preliminares corresponden a una compilación anterior. Release, ZIP y sus comprobaciones estáticas completados; dos bloques Python del workflow analizados sintácticamente. Se mantienen 32 regresiones generales preparadas, no ejecutadas contra 0.3.4. Detalles en [REGION_CONNECTORS.md](REGION_CONNECTORS.md). Sin revisión visual ni nueva CI; 0.3.3 sigue siendo evidencia separada.
