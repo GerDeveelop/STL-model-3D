@@ -1,5 +1,7 @@
 # Requisitos de fase 0.1
 
+> 0.3.7 publicada y aceptada por CI 11: 32+113 comprobaciones CPU, build/paquete e índice sobre 120 000 caras sintéticas correctos. No habilita todavía extracción del modelo de 355 208 caras ni selección por clic; esos requisitos y el benchmark real siguen pendientes. [CI.md](CI.md).
+
 > 0.3.7 local: antes de seleccionar/extraer, diagnosticar cada instancia y acelerar búsquedas sin eliminar procedencia ni subir límites a ciegas. Filtro preliminar no equivale a certificado Manifold/autointersecciones. Release compilado; ejecución final bloqueada por 4551. Selección por clic todavía pendiente. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md).
 
 > 0.3.5/0.3.6 publicados y aceptados en CPU por CI 10: 32+92 casos y build/paquete correctos. Resultado gráfico de la corrección de moteado pendiente de revisión visible; no se declara resuelto el bloqueo local ni cerrado RF-02 para este cambio gráfico. [CI.md](CI.md).

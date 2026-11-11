@@ -37,6 +37,8 @@ Ampliación posterior aprobada: miniz 3.1.0 MIT, descarga fijada por SHA-256 y l
 
 ## Documentación y autorización
 
+- 0.3.7 publicada por autorización en 15545e9 y aceptada en CI 11 (32+113 comprobaciones, build/paquete). Se completa aceptación CPU de la base, sin cambiar bloqueo local ni ampliar topes de extracción. Clic/región conectada/resaltado y mediciones reales siguen pendientes según el orden aprobado; docs/CI.md.
+
 - 2026-11-10: usuario autorizó publicar 0.3.7 y completar sus comprobaciones en CI antes de continuar con selección por clic/resaltado. No autoriza eludir el bloqueo local ni publicar modelos privados.
 
 - Usuario aprobó mantener el orden de docs/PHASE_03.md y continuar: primero viabilidad/rendimiento, luego selección por clic/resaltado y extracción dirigida, después mejora visual acotada y selección libre. Incremento local 0.3.7: diagnóstico/índice compilados, aceptación final bloqueada por 4551. docs/SURFACE_FEASIBILITY.md. Sin nuevas dependencias, revisión visual ni publicación automática; no eludir la política.

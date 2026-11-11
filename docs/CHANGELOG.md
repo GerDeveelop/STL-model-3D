@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 2026-11-10 — Publicación y aceptación CPU 0.3.7
+
+Tras autorización, publicado 15545e9 y CI 11 satisfactoria: build/paquete y **32+113 comprobaciones correctas**, incluida instancia sintética de 120 000 caras, índices contra búsqueda exhaustiva y diagnóstico. Aceptación remota de la base completada; sin cambios de seguridad, benchmark privado C++/RSS ni revisión gráfica nueva. Límites de extracción conservados, clic/resaltado todavía pendientes. Evidencia y artefacto en CI.md.
+
 ## 2026-11-10 — Base de viabilidad y consultas espaciales 0.3.7 local
 
 Orden de selección aprobado y documentado. Diagnóstico por instancia de topología exacta/volumen/colores/presupuestos y componentes de superficie; trabajador GUI de solo lectura y CLI. SurfaceIndex BVH con procedencia, consultas deterministas y referencia exhaustiva; PaintVolume cambia barrido completo por consulta indexada con presupuesto real. Sin ampliar topes geométricos ni dependencias. Preliminar 109/112; corregida acumulación del volumen. Release final compilado, primer arranque bloqueado por 4551, sin reintentos alternativos. Referencia independiente del modelo privado, fuente intacta. Preparados 32+113 casos, pendiente aceptación final y medición real C++; clic/resaltado aún no construidos. Sin publicación/CI nueva. SURFACE_FEASIBILITY.md.

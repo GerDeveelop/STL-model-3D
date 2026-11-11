@@ -1,5 +1,7 @@
 # Arquitectura y decisiones
 
+> Base 0.3.7 publicada y aceptada en CI 11 sobre 15545e9: build/paquete y 32+113 casos correctos, incluidos diagnóstico por instancia e índice BVH. Pendientes mediciones reales y selección conectada de pantalla; límites de reconstrucción sin ampliar. [CI.md](CI.md).
+
 > Incremento local 0.3.7: MeshFeasibility y SurfaceIndex sin Qt ni dependencias nuevas. Filtro exacto por instancia; BVH sobre facetas expandidas conserva procedencia y compara con referencia exhaustiva. PaintVolume usa presupuesto real de visitas/evaluaciones, manteniendo topes de reconstrucción. GUI/CLI exponen diagnóstico de solo lectura. Release compilado; aceptación final pendiente por 4551. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md).
 
 > Publicación 0.3.5/0.3.6 aceptada por CI 10 en a31f398: 32+92 casos CPU, build y paquete correctos. Se valida el estado de parámetros y normales; la imagen nueva/MSAA/shaders no se certifican mediante la batería sin ventana. Bloqueo local sin alterar. [CI.md](CI.md).

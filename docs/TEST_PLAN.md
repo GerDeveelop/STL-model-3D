@@ -1,5 +1,7 @@
 # Plan de pruebas de fase 0.1
 
+> Resultado remoto 0.3.7: CI 11 en 15545e9 aprobó **32/32+113/113**, build/paquete, inventario/hashes y PATH mínimo. Completa aceptación CPU del diagnóstico/índice; caso sintético de 120 000 caras y comparación exhaustiva correctos. Sin benchmark del archivo privado ni aprobación gráfica de la nueva interfaz. [CI.md](CI.md).
+
 > 0.3.7: preparados 32 casos generales y 113 de pintura/volumen/conectores/historial/visor/viabilidad/índice. Preliminar 109/112, tres igualdades de volumen detectaron acumulación con división por cara; corregida la suma. Primera ejecución final bloqueada con 4551 y abortada sin reintentos. Referencia Python del modelo privado es evidencia independiente, no C++ nuevo. Sin aceptación final ni revisión visual/publicación/CI nueva. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md).
 
 > Resultado remoto 2026-11-10: CI 10 en a31f398 aprobó **32/32 + 92/92**, build/paquete e inventario/hashes con PATH mínimo. Incluye 13 casos de parámetros de historial y siete de normales del visor. CI 9 obtuvo 90/92 por dos datos sintéticos cuyo atributo pindex se alteraba accidentalmente; corregido el generador sin modificar el C++. Aceptación CPU completada; revisión gráfica del binario nuevo sigue pendiente. [CI.md](CI.md).

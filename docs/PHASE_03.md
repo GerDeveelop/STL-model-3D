@@ -1,5 +1,9 @@
 # Fase 0.3 — Conectores y separación por color 3MF
 
+## Base 0.3.7 publicada y aceptada en CI
+
+Publicación autorizada 15545e9. CI 11 completó build/paquete y **32+113 casos correctos**, incluido diagnóstico/índice sobre 120 000 caras sintéticas. La aceptación CPU que no pudo ejecutarse localmente quedó completada en el runner. El diagnóstico del modelo privado sigue siendo referencia independiente; mediciones reales C++/RSS y límites de extracción no se dan por resueltos. Se mantiene el orden aprobado: continuar con esa validación por instancia y selección por clic/región conectada/resaltado, todavía sin implementar. Evidencia en [CI.md](CI.md); sin modificación de políticas ni revisión gráfica nueva.
+
 ## Primer paso del orden aprobado — 0.3.7 en aceptación
 
 Construidos diagnóstico por instancia y SurfaceIndex BVH, con identidad de material/cara/instancia, presupuesto real de consultas y referencia exhaustiva. PaintVolume usa ese índice; conserva los límites de caras/facetas y conectores, sin habilitar aún extracción del modelo grande. Botón de diagnóstico cancelable y CLI. Compilado; primera ejecución final bloqueada por Windows 4551. Evidencia preliminar e independiente, límites y aceptación pendiente en [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md). Tras aceptar esta base y medirla sobre las instancias del modelo, sigue la selección por clic/región conectada y resaltado. Suavizado visual y pincel/lazo mantienen su prioridad posterior.

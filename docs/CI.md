@@ -1,5 +1,15 @@
 # CI Windows x64
 
+## Publicación y aceptación CPU 0.3.7 — 2026-11-10 (Colombia)
+
+Publicación autorizada en main `15545e908ea85fce68f8409e9921c2d726465b99`. [CI 11](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42955441598) completada **success** en todas las etapas: adquisición/verificación de dependencias, Release/paquete, **32/32 casos generales** y **113/113** de pintura/volumen/conectores/historial/visor/viabilidad/índice. Completa la aceptación CPU antes bloqueada localmente. Incluye los tres casos de volumen ya corregidos, diagnóstico por instancia y consultas comparadas con referencia exhaustiva; una instancia sintética de 120 000 caras valida diagnóstico y aceleración con menos del 5% de las evaluaciones de triángulos de la búsqueda exhaustiva para sus tres puntos. No es un benchmark del modelo privado ni una garantía general de rendimiento.
+
+Paquete con PATH mínimo y carpeta con espacios/ñ, CRC/inventario de 75 archivos más manifiesto y tamaños/hashes correctos. Entorno remoto anotado: windows-2022 imagen 20261101.353.1, MSVC 14.44.35207, SDK 10.0.26100.0, CMake 3.31.6, Ninja 1.13.2, Python 3.12.10, 7-Zip 26.05 y CRT 14.44.35211.0. Qt 6.8.3, lib3mf 2.5.0, Manifold 3.5.4 y miniz 3.1.0 fijados. Sin revisión gráfica ni instalación/VM limpia; no se modifica el bloqueo local 4551.
+
+[Artefacto windows-x64-11](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42955441598/artifacts/13826871955): 16 313 575 bytes, no expirado al consultar, retención de siete días. Digest del contenedor Actions `sha256:5db60c0d1fc4f4e72362af6ab79da7f02bd5af54088cc9e653c37d3369909aaa`. ZIP interior `STLCutStudioAI-0.3.7-portable-win-x64-20261111T035248886Z.zip`, SHA-256 `beee5cb22151f80d3853a09a1bb2b5d710c8f7bfcf7fdcd0a25b8f0d87230183`. Sello UTC; fecha local de ejecución 2026-11-10. No confundir hashes con el paquete local ni el contenedor. No se descargó/ejecutó el artefacto en el equipo local; informes de ambos bloques incluidos.
+
+Metadatos consultados por API pública, sin recuperar credenciales, y conservados fuera de Git en build/ci-037-run.json, ci-037-jobs.json, ci-037-artifacts.json y ci-037-annotations.json. Modelos privados y prueba.stl no publicados. Quedan pendientes mediciones C++/RSS sobre el modelo privado, selección por clic/región conectada/resaltado y extracción dirigida; no se elevaron topes de reconstrucción ni se declaró cerrada fase 0.3. La actualización documental posterior no altera el código validado ni activa otra compilación por los filtros de rutas.
+
 > 0.3.7 local: workflow preparado con 32+113 casos, incluidos viabilidad e índice y una instancia sintética de 120 000 caras. El caso que antes esperaba rechazo por celdas×facetas ahora exige la reconstrucción correcta con consultas indexadas; los límites de caras/facetas siguen vigentes. Batería final no ejecutada por bloqueo 4551; sin nueva publicación/CI. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md).
 
 ## Publicación y aceptación CPU 0.3.5–0.3.6 — 2026-11-10 (Colombia)

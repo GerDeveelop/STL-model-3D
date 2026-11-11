@@ -1,6 +1,6 @@
 # STL Cut Studio AI
 
-**Incremento local 0.3.7 en aceptación:** diagnóstico por instancia y búsqueda de superficies mediante índice espacial BVH, integrada en la reconstrucción. Primer paso del orden aprobado para selección por clic; clic/resaltado aún pendientes. Release compilado, pero Windows bloqueó el primer arranque del binario final. No se ampliaron límites de extracción ni se modificaron fuentes. [Contrato y evidencia](docs/SURFACE_FEASIBILITY.md). Sin publicación/CI nueva de este incremento.
+**Estado 0.3.7 publicado (2026-11-10):** diagnóstico por instancia e índice espacial BVH en main 15545e9. [CI 11](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42955441598) aprobó build/paquete y **145 comprobaciones CPU** (32+113), incluido un caso sintético de 120 000 caras. [Contrato y límites](docs/SURFACE_FEASIBILITY.md). Clic/región conectada/resaltado y medición real sobre el modelo privado siguen pendientes; límites de extracción conservados. Los estados locales siguientes son históricos.
 
 **Estado 0.3.6 publicado (2026-11-10):** 0.3.5/0.3.6 subidos a main; [CI 10](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42948952405) aprobó compilación, paquete y **124 comprobaciones CPU** (32+92). Normales estables y parámetros de historial aceptados dentro del alcance probado. **La revisión visual de nitidez/MSAA sigue pendiente** por bloqueo local, sin alterar seguridad. [Evidencia y límites](docs/VIEWER.md). Las notas locales siguientes son históricas.
 

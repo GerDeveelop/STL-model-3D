@@ -1,10 +1,10 @@
 # STL Cut Studio AI — Documento maestro para Codex
 
-**Versión del documento:** 1.12
+**Versión del documento:** 1.13
 
-**Incremento local 0.3.7 en aceptación:** diagnóstico por instancia, índice espacial y consulta indexada en reconstrucción. Sigue la priorización aprobada para selección interactiva; clic/región conectada/resaltado/extracción dirigida no están implementados todavía. Compilado; primer arranque del binario final bloqueado con 4551. Sin ampliación automática de límites ni seguridad modificada. [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md). Sin publicación ni CI remota nueva.
+**Estado vigente 0.3.7 (2026-11-10):** diagnóstico por instancia e índice espacial publicados en main 15545e9 y aceptados por CI 11: build/paquete y **32+113 comprobaciones CPU correctas**. Incluye diagnóstico/índice de 120 000 caras sintéticas y comparación exhaustiva. [CI.md](CI.md), [SURFACE_FEASIBILITY.md](SURFACE_FEASIBILITY.md). Sin benchmark privado C++/RSS ni revisión gráfica nueva; clic/región conectada/resaltado/extracción dirigida siguen pendientes. No se ampliaron topes ni se cambió seguridad. Las notas locales siguientes son históricas.
 
-**Estado vigente 0.3.6 (2026-11-10):** 0.3.5/0.3.6 publicados en main, código 8798204 y generador corregido a31f398. CI 10 satisfactoria: build/paquete, **32+92 comprobaciones CPU correctas** y artefacto. Aceptación de parámetros y normales completada remotamente; **revisión gráfica de la corrección/MSAA aún pendiente**, bloqueo local sin modificar. [CI.md](CI.md), [VIEWER.md](VIEWER.md). No se cierra la fase 0.3; las notas siguientes conservan estados históricos.
+**Publicación anterior 0.3.6 (2026-11-10):** 0.3.5/0.3.6 publicados en main, código 8798204 y generador corregido a31f398. CI 10 satisfactoria: build/paquete, **32+92 comprobaciones CPU correctas** y artefacto. Aceptación de parámetros y normales completada remotamente; **revisión gráfica de la corrección/MSAA aún pendiente**, bloqueo local sin modificar. [CI.md](CI.md), [VIEWER.md](VIEWER.md). No se cierra la fase 0.3; las notas siguientes conservan estados históricos.
 
 **Incremento local 0.3.5:** parámetros de reconstrucción incorporados al historial y recuperación de controles con Deshacer/Rehacer. Estado JSON paint_volume y edición de borrador paint-settings sin paso geométrico. Release y 85/85 aceptaciones inline correctas; [HISTORY.md](HISTORY.md). Sin publicación/CI nueva ni revisión visual. Quedan pendientes ampliación geométrica de redes/contactos y diagnóstico/reparación de fase 0.3.
 

@@ -1,5 +1,7 @@
 # Viabilidad por instancia e índice de superficies — 0.3.7
 
+> Actualización 2026-11-10: publicación 15545e9 y [CI 11](https://github.com/GerDeveelop/STL-model-3D/actions/runs/42955441598) satisfactorias, build/paquete y **32+113 comprobaciones correctas**. Aceptación CPU de esta base completada. El caso sintético de 120 000 caras también pasó. Las menciones de aceptación remota pendiente siguientes describen el estado local previo; no se convierten las ejecuciones locales bloqueadas en aprobadas. Siguen pendientes benchmark real C++/RSS, revisión de la nueva interfaz y selección por clic. Entorno/artefacto/hashes en [CI.md](CI.md).
+
 Fecha: 2026-11-10. Primer incremento del orden aprobado para selección interactiva de fase 0.3. Aún no implementa clic/resaltado, selección conectada por color ni extracción dirigida. No introduce dependencias, modifica modelos originales ni amplía silenciosamente límites de reconstrucción/conectores. Estado de aceptación al final.
 
 ## Diagnóstico por instancia
