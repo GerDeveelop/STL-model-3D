@@ -1,5 +1,7 @@
 # Arquitectura y decisiones
 
+> Publicación 0.3.5/0.3.6 aceptada por CI 10 en a31f398: 32+92 casos CPU, build y paquete correctos. Se valida el estado de parámetros y normales; la imagen nueva/MSAA/shaders no se certifican mediante la batería sin ventana. Bloqueo local sin alterar. [CI.md](CI.md).
+
 > Corrección local 0.3.6: normal double por cara fuente en prepareViewMesh, compartida por las hojas de pintura y flat en shaders; MSAA solicitado y clipping adaptativo. Sin cambios del núcleo geométrico ni fuentes. Compilada; ejecución final bloqueada por Windows 4551, resultado GPU pendiente. [VIEWER.md](VIEWER.md).
 
 > Incremento local 0.3.5: EditState contiene PaintVolumeSpec por valor, incluido automáticamente en sizeof(EditState) para presupuesto. Setter valida parámetros antes de mutar; GUI restaura con señales bloqueadas, CLI publica parámetros de split-paint tras commit sobre candidato. Sin nuevas dependencias ni cambios del motor geométrico. [HISTORY.md](HISTORY.md).

@@ -1,5 +1,7 @@
 # Plan de pruebas de fase 0.1
 
+> Resultado remoto 2026-11-10: CI 10 en a31f398 aprobó **32/32 + 92/92**, build/paquete e inventario/hashes con PATH mínimo. Incluye 13 casos de parámetros de historial y siete de normales del visor. CI 9 obtuvo 90/92 por dos datos sintéticos cuyo atributo pindex se alteraba accidentalmente; corregido el generador sin modificar el C++. Aceptación CPU completada; revisión gráfica del binario nuevo sigue pendiente. [CI.md](CI.md).
+
 > 0.3.6: siete regresiones CPU del visor preparadas (32+92 casos totales). Primer intento de ejecutar el exe bloqueado por Windows 4551; no se lanzó la batería. Compilación y análisis matemático independientes completados, resultado visual del nuevo binario pendiente. No se confunde la captura original 0.3.5 ni el análisis del XML con una aprobación C++/GPU. [VIEWER.md](VIEWER.md).
 
 > Paquete local 0.3.5 comprobado: **32+85 aceptaciones correctas**, PATH mínimo, carpeta con espacios/ñ e inventario/CRC/hashes verificados. Reportes paint-history-package-verification.json y paint-history-package-paint-verification.json dentro de build/. Sin revisión visual ni CI nueva; [HISTORY.md](HISTORY.md).

@@ -37,6 +37,8 @@ Ampliación posterior aprobada: miniz 3.1.0 MIT, descarga fijada por SHA-256 y l
 
 ## Documentación y autorización
 
+- Publicación autorizada 0.3.5/0.3.6 completada en 8798204 y ajuste de generador a31f398. CI 10 satisfactoria (32+92 casos CPU, build/paquete); revisión gráfica nueva pendiente y política local sin alterar. Las menciones de publicación/aceptación remota pendientes siguientes son históricas. docs/CI.md y docs/VIEWER.md.
+
 - 2026-11-10: usuario autorizó publicar 0.3.5 y 0.3.6 y validar código/regresiones en CI. La revisión gráfica nueva permanece pendiente por bloqueo local; no se autoriza cambiar ni eludir seguridad. Las notas de ausencia de publicación siguientes son históricas.
 
 - Incidencia visual aprobada por el usuario: 0.3.6 local corrige normales de facetas pequeñas/pintura y mejora MSAA/profundidad; revisión visible autorizada para esta incidencia. docs/VIEWER.md. Release compilado; primera ejecución bloqueada con 4551, no eludir protección. Aceptación dinámica/visual pendiente. La construcción del historial 0.3.5 se conserva.

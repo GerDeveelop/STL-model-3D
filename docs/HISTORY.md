@@ -1,5 +1,7 @@
 # Cortes encadenados y Deshacer/Rehacer — 0.2.2
 
+> Publicación posterior 2026-11-10: 0.3.5/0.3.6 en main y CI 10 satisfactoria, con 32+92 comprobaciones. Completa la aceptación remota de parámetros; las notas locales siguientes conservan sus fechas/resultados propios. No acredita revisión visual nueva. [CI.md](CI.md).
+
 ## Parámetros de reconstrucción — incremento local 0.3.5
 
 Continuación autorizada de fase 0.3, 2026-11-09. EditState conserva PaintVolumeSpec: modo (`partition`/`inserts`), resolución y profundidad del inserto. Valores iniciales: partición, celda 1 y profundidad 2 en unidades del modelo. El presupuesto ya usa sizeof(EditState), por lo que contabiliza estos valores sin añadir buffers geométricos ni dependencias. Sesión solo en memoria; no es guardado de proyecto.

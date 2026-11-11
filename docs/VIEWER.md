@@ -1,5 +1,7 @@
 # Visor 3D — fase 0.1
 
+> Actualización 2026-11-10: 0.3.5/0.3.6 publicados; CI 10 en a31f398 aprobó build/paquete, 32 casos generales y 92 de pintura/volumen/conectores/historial/normales. Aceptación **CPU** completada, incluido el cálculo de normales de facetas pequeñas. La revisión de la imagen corregida/MSAA/shaders sigue pendiente por bloqueo local, sin cambio de protección. El análisis privado descrito debajo no se convierte en ejecución del C++ sobre ese archivo. Evidencia, corrección de dos datos sintéticos de CI 9 y artefacto en [CI.md](CI.md).
+
 ## Corrección de moteado al importar 3MF — 0.3.6 local
 
 2026-11-09. Usuario aportó captura y autorizó corregir el renderizado/comprobar la causa. Revisión de la ventana 0.3.5 con su modelo: 355 208 triángulos fuente, 79 916 caras pintadas y 173 626 subdivisiones; moteado brillante visible. Historial sin operaciones; se cerró para recompilar. La autorización de revisión visible corresponde a esta incidencia, sin reabrir una revisión visual general de fase.

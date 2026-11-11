@@ -1,5 +1,9 @@
 # Registro de cambios
 
+## 2026-11-10 — Publicación y aceptación CPU 0.3.6
+
+0.3.5/0.3.6 publicados en 8798204 y corrección de generador inline a31f398 (restringir atributo x para no modificar pindex). CI 10 aprobó build/paquete y **32+92 casos**. CI 9 había aprobado 32+90, con dos rechazos de datos sintéticos por ese índice decimal. Código del visor sin cambios entre ambas ejecuciones. Aceptación CPU y de parámetros completada, con nitidez/MSAA/shaders todavía pendientes de revisión gráfica y bloqueo local intacto. Artefacto y hashes en CI.md; sin modelos privados ni instalador final publicados.
+
 ## 2026-11-09 — Corrección visual 0.3.6 en aceptación
 
 Incidencia de moteado 3MF confirmada en ventana 0.3.5 y corrección autorizada. Normales double por cara fuente, heredadas por subdivisiones de pintura; evita normales cero debidas al umbral absoluto de QVector3D::normalized. MSAA 4x solicitado con soporte real informado, rango near/far adaptativo y retirada de polygon offset global. Geometría/fuentes intactas. Release compilado; primer intento CPU bloqueado por Windows 4551, sin eludirlo. Análisis independiente reproduce la causa; no equivale a aceptación C++/GPU. Siete casos adicionales preparados (32+92 totales), sin ejecución final ni publicación/CI nueva. VIEWER.md.

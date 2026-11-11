@@ -1,5 +1,7 @@
 # Requisitos de fase 0.1
 
+> 0.3.5/0.3.6 publicados y aceptados en CPU por CI 10: 32+92 casos y build/paquete correctos. Resultado gráfico de la corrección de moteado pendiente de revisión visible; no se declara resuelto el bloqueo local ni cerrado RF-02 para este cambio gráfico. [CI.md](CI.md).
+
 > Incidencia visual 0.3.6 aprobada: corregir moteado de normales cero en facetas pequeñas y mejorar antialiasing/profundidad preservando el 3MF. Release compilado, análisis independiente confirma causa; C++/GPU nuevos pendientes por bloqueo 4551. No se atribuyen aceptaciones previas al nuevo exe. [VIEWER.md](VIEWER.md).
 
 > Incremento local 0.3.5: Deshacer/Rehacer recupera modo, resolución y profundidad de reconstrucción. Editar controles no crea un paso geométrico; fallos conservan parámetros/Redo. Release y 85 casos inline correctos; sin revisión visual ni nueva CI. Contrato en [HISTORY.md](HISTORY.md).
