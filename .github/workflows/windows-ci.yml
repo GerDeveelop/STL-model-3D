@@ -833,7 +833,7 @@ jobs:
           def distant_body(xml):
            def shifted(m):
             x=float(m[1]);return 'x="'+str(x+400 if x>=40 else x)+'"'
-           return re.sub(r'x="([^"]+)"',shifted,xml)
+           return re.sub(r'\bx="([^"]+)"',shifted,xml)
           def detailed_paint():
            j=normal_view(mutate_zip(paint_model(full_tree(7)),distant_body),legacy_zero=True)
            assert j['triangles']==24 and j['painted_triangles']==1 and j['paint_facets']==16384,j
